@@ -365,7 +365,7 @@ export const generateBabyUltrasoundImage = async (
         const genderPrompt = babyGender === 'nam' ? "Male (Boy)" : babyGender === 'nu' ? "Female (Girl)" : "Random (Boy or Girl)";
         const stylePrompt = babyStyle === 'ultrasound' ? "3D Cinematic Medical Ultrasound rendering style" : "High-definition newborn portrait photography style";
 
-        const selectedModel = (modelType === 'nano' || modelType === 'nano-pro') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-2.5-flash-image';
 
         const strictPrompt = babyStrictFeatures ? `
         !!! SURGICAL FIDELITY RECONSTRUCTION - ABSOLUTE BIOLOGICAL CLONING !!!
@@ -406,7 +406,7 @@ export const generateBabyUltrasoundImage = async (
                 { text: prompt }
               ] 
             },
-            config: (modelType === 'nano' || modelType === 'nano-pro') ? { imageConfig: { imageSize: '4K', aspectRatio: 'auto' } } : undefined
+            config: undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -424,7 +424,7 @@ export const generateBabyFromUltrasoundImage = async (
         let ultrasoundBase64 = await resizeImage(ultrasoundFile);
         const { ultrasoundTask = 'predict-face', userPrompt, enableUpscale, babyFacialDetailIntensity = 0.8, babyStrictFeatures = false, modelType } = settings;
 
-        const selectedModel = (modelType === 'nano' || modelType === 'nano-pro') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-2.5-flash-image';
 
         const strictPrompt = babyStrictFeatures ? `
         !!! ULTRA-PRECISION FACE-CENTERED RECONSTRUCTION !!!
@@ -474,7 +474,7 @@ export const generateBabyFromUltrasoundImage = async (
                 { text: prompt }
               ] 
             },
-            config: (modelType === 'nano' || modelType === 'nano-pro') ? { imageConfig: { imageSize: '4K', aspectRatio: 'auto' } } : undefined
+            config: undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -587,7 +587,7 @@ export const generateStyledImage = async (
     } = settings;
 
     const ai = getAI();
-    const selectedModel = (modelType === 'nano' || modelType === 'nano-pro') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
+    const selectedModel = 'gemini-2.5-flash-image';
     
     let originalBase64 = await resizeImage(originalFile);
     let mimeType = originalFile.type;
@@ -596,12 +596,8 @@ export const generateStyledImage = async (
     let targetRatio = "1:1";
     let effectiveImageSize: any = imageSize;
 
-    if (modelType === 'nano' || modelType === 'nano-pro') {
-        if (aspectRatio && aspectRatio !== 'auto') {
-            targetRatio = aspectRatio;
-        } else {
-            targetRatio = await getProAutoRatio(originalFile);
-        }
+    if (aspectRatio && aspectRatio !== 'auto') {
+        targetRatio = aspectRatio;
     }
 
     const preservationFlags = [];
@@ -678,7 +674,7 @@ export const generateStyledImage = async (
     const response = await ai.models.generateContent({
       model: selectedModel, 
       contents: { parts: [{ inlineData: { mimeType, data: originalBase64 } }, { text: finalPrompt }] },
-      config: (modelType === 'nano' || modelType === 'nano-pro') ? { imageConfig: { imageSize: effectiveImageSize, aspectRatio: targetRatio } } : undefined
+      config: undefined
     });
 
     const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -694,7 +690,7 @@ export const generateBackgroundSwapImage = async (
     try {
         const ai = getAI();
         const { userPrompt, referenceImage, modelType, imageSize, aspectRatio, enableUpscale, preserveFace = true } = settings;
-        const selectedModel = (modelType === 'nano' || modelType === 'nano-pro') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-2.5-flash-image';
 
         let originalBase64 = await resizeImage(originalFile);
         let mimeType = originalFile.type;
@@ -729,7 +725,7 @@ export const generateBackgroundSwapImage = async (
         const response = await ai.models.generateContent({
             model: selectedModel,
             contents: { parts: contentParts },
-            config: (modelType === 'nano' || modelType === 'nano-pro') ? { imageConfig: { imageSize: imageSize, aspectRatio: aspectRatio === 'auto' ? '1:1' : aspectRatio } } : undefined
+            config: undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -759,7 +755,7 @@ export const generatePaintingImage = async (originalFile: File, settings: Genera
     try {
         const { userPrompt, modelType, imageSize, aspectRatio, paintingStyle, paintingQualityEnhance, referenceImage } = settings;
         const ai = getAI();
-        const selectedModel = (modelType === 'nano' || modelType === 'nano-pro') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-2.5-flash-image';
         
         let originalBase64 = await resizeImage(originalFile);
         let mimeType = originalFile.type;
@@ -796,7 +792,7 @@ export const generatePaintingImage = async (originalFile: File, settings: Genera
         const response = await ai.models.generateContent({
             model: selectedModel,
             contents: { parts: contentParts },
-            config: (modelType === 'nano' || modelType === 'nano-pro') ? { imageConfig: { imageSize, aspectRatio: aspectRatio === 'auto' ? '1:1' : aspectRatio } } : undefined
+            config: undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
