@@ -116,7 +116,7 @@ export const generateFaceStraightenImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -155,7 +155,7 @@ export const generateLifestyleImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -196,7 +196,7 @@ export const generateMockupImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -242,7 +242,7 @@ export const generateLightingEffectImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
                 parts: [
                     { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -297,7 +297,7 @@ export const generateRemoveBackgroundImage = async (
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -336,7 +336,7 @@ export const generateSymmetricEditImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -365,7 +365,7 @@ export const generateBabyUltrasoundImage = async (
         const genderPrompt = babyGender === 'nam' ? "Male (Boy)" : babyGender === 'nu' ? "Female (Girl)" : "Random (Boy or Girl)";
         const stylePrompt = babyStyle === 'ultrasound' ? "3D Cinematic Medical Ultrasound rendering style" : "High-definition newborn portrait photography style";
 
-        const selectedModel = 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-3-flash-preview';
 
         const strictPrompt = babyStrictFeatures ? `
         !!! SURGICAL FIDELITY RECONSTRUCTION - ABSOLUTE BIOLOGICAL CLONING !!!
@@ -424,7 +424,7 @@ export const generateBabyFromUltrasoundImage = async (
         let ultrasoundBase64 = await resizeImage(ultrasoundFile);
         const { ultrasoundTask = 'predict-face', userPrompt, enableUpscale, babyFacialDetailIntensity = 0.8, babyStrictFeatures = false, modelType } = settings;
 
-        const selectedModel = 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-3-flash-preview';
 
         const strictPrompt = babyStrictFeatures ? `
         !!! ULTRA-PRECISION FACE-CENTERED RECONSTRUCTION !!!
@@ -512,7 +512,7 @@ export const generateArchitectureRenderImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -557,7 +557,7 @@ export const generateUpscaleExpandImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
                 parts: [
                     { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -587,7 +587,7 @@ export const generateStyledImage = async (
     } = settings;
 
     const ai = getAI();
-    const selectedModel = 'gemini-2.5-flash-image';
+    const selectedModel = 'gemini-3-flash-preview';
     
     let originalBase64 = await resizeImage(originalFile);
     let mimeType = originalFile.type;
@@ -690,7 +690,7 @@ export const generateBackgroundSwapImage = async (
     try {
         const ai = getAI();
         const { userPrompt, referenceImage, modelType, imageSize, aspectRatio, enableUpscale, preserveFace = true } = settings;
-        const selectedModel = 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-3-flash-preview';
 
         let originalBase64 = await resizeImage(originalFile);
         let mimeType = originalFile.type;
@@ -755,7 +755,7 @@ export const generatePaintingImage = async (originalFile: File, settings: Genera
     try {
         const { userPrompt, modelType, imageSize, aspectRatio, paintingStyle, paintingQualityEnhance, referenceImage } = settings;
         const ai = getAI();
-        const selectedModel = 'gemini-2.5-flash-image';
+        const selectedModel = 'gemini-3-flash-preview';
         
         let originalBase64 = await resizeImage(originalFile);
         let mimeType = originalFile.type;
@@ -849,7 +849,7 @@ export const generateProfileImage = async (originalFile: File, settings: Profile
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { 
               parts: contentParts 
             },
@@ -866,7 +866,7 @@ export const preprocessClothImage = async (file: File): Promise<Part> => {
         const ai = getAI();
         const initialPart = await fileToPart(file);
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { parts: [initialPart, { text: "Isolate clothing, remove human." }] },
         });
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -890,7 +890,7 @@ export const generateClothingSwap = async (personImage: Part, clothImage: Part, 
     try {
         const ai = getAI();
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-3-flash-preview',
             contents: { parts: [personImage, clothImage, { text: "Clothing swap task." }] },
         });
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -902,7 +902,7 @@ export const refineClothingResult = async (resultImagePart: Part, prompt: string
      try {
             const ai = getAI();
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-3-flash-preview',
                 contents: { parts: [resultImagePart, { text: prompt }] },
             });
             const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
