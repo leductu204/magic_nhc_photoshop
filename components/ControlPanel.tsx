@@ -348,9 +348,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <RocketLaunchIcon className="w-6 h-6 text-sky-400" />
                   </div>
                   <div className="text-left">
-                      <div className="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em] leading-none mb-1.5">GÓI XỬ LÝ AI</div>
+                      <div className="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em] leading-none mb-1.5">MÔ HÌNH GEMINI 3.1</div>
                       <div className="text-[18px] font-black text-white uppercase leading-none tracking-tight">
-                        {settings.modelType === 'nano-pro' ? 'NANO PRO' : settings.modelType === 'nano' ? 'NANO' : 'MIỄN PHÍ'}
+                        {settings.modelType === 'nano' ? 'NANO BANANA' : 'NANO BANANA PRO'}
                       </div>
                   </div>
               </div>
@@ -359,95 +359,81 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           
           {isModelSelectorOpen && (
               <div className="px-6 pb-6 pt-2 space-y-6 border-t border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
-                  {/* Model Selector Tabs */}
-                  <div className="grid grid-cols-3 gap-2 p-1 bg-black/40 rounded-xl border border-white/5">
-                      <button 
-                        onClick={() => onSettingsChange({ modelType: 'free' })}
-                        className={`py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${settings.modelType === 'free' ? 'bg-zinc-800 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                      >
-                        Miễn Phí
-                      </button>
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-xl border border-white/5">
                       <button 
                         onClick={() => onSettingsChange({ modelType: 'nano' })}
-                        className={`py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${settings.modelType === 'nano' ? 'bg-sky-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${settings.modelType === 'nano' ? 'bg-violet-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                       >
-                        Nano
+                        Nano Banana
                       </button>
                       <button 
-                        onClick={() => onSettingsChange({ modelType: 'nano-pro' })}
-                        className={`py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${settings.modelType === 'nano-pro' ? 'bg-violet-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                        onClick={() => onSettingsChange({ modelType: 'pro-image' })}
+                        className={`py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${settings.modelType === 'pro-image' ? 'bg-sky-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                       >
-                        Nano Pro
+                        Bản Pro
                       </button>
                   </div>
 
-                  {(settings.modelType === 'nano' || settings.modelType === 'nano-pro') ? (
-                      <>
-                        {settings.modelType === 'nano-pro' && (
-                          <div className="space-y-4">
-                              <h3 className="text-[16px] font-black text-violet-400 uppercase tracking-widest">KÍCH THƯỚC</h3>
-                              <div className="grid grid-cols-3 gap-3">
-                                  {['1K', '2K', '4K'].map((size) => (
-                                      <button
-                                          key={size}
-                                          onClick={() => onSettingsChange({ imageSize: size as any, modelType: settings.modelType })}
-                                          className={`py-4 rounded-xl border-2 font-black text-[16px] transition-all flex items-center justify-center ${
-                                              settings.imageSize === size 
-                                              ? 'bg-violet-500 border-violet-400 text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]' 
-                                              : 'bg-zinc-900/50 border-white/5 text-gray-500 hover:border-white/20'
-                                          }`}
-                                      >
-                                          {size}
-                                      </button>
-                                  ))}
-                              </div>
-                          </div>
-                        )}
-
-                        <div className={`space-y-4 ${settings.modelType === 'nano-pro' ? 'pt-4 border-t border-white/5' : ''}`}>
-                            <p className="text-[10px] text-gray-400 italic leading-relaxed">
-                                * Nhập API Key Trạm Sáng Tạo để sử dụng gói {settings.modelType === 'nano-pro' ? 'Nano Pro' : 'Nano'}.
-                            </p>
-                            
-                            <div className="space-y-3">
-                                <div className="relative group">
-                                    <KeyIcon className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${settings.modelType === 'nano-pro' ? 'text-violet-500' : 'text-sky-500'} group-focus-within:scale-110 transition-transform`} />
-                                    <input 
-                                        type="password"
-                                        value={settings.tstApiKey || ''}
-                                        onChange={e => onSettingsChange({ tstApiKey: e.target.value })}
-                                        className={`w-full bg-black/40 border-2 ${settings.modelType === 'nano-pro' ? 'border-violet-500/20 focus:border-violet-500' : 'border-sky-500/20 focus:border-sky-500'} rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none transition-all placeholder:text-zinc-800`}
-                                        placeholder="NHẬP API KEY TRẠM SÁNG TẠO..."
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="h-[1px] flex-1 bg-white/5"></div>
-                                    <span className="text-[9px] font-black text-zinc-700 uppercase tracking-widest">API KEY</span>
-                                    <div className="h-[1px] flex-1 bg-white/5"></div>
-                                </div>
-
-                            </div>
-                        </div>
-                      </>
-                  ) : (
-                      <div className="p-6 bg-sky-500/5 border border-sky-500/10 rounded-2xl flex flex-col items-center text-center gap-3 animate-in fade-in zoom-in-95 duration-500">
-                          <div className="w-12 h-12 bg-sky-500/10 rounded-full flex items-center justify-center">
-                              <CheckIcon className="w-6 h-6 text-sky-400" />
-                          </div>
-                          <div className="space-y-1">
-                              <h4 className="text-[13px] font-black text-white uppercase tracking-tight">Đang sử dụng bản Miễn Phí</h4>
-                              <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                                  Tốc độ xử lý nhanh, ổn định cho các tác vụ cơ bản. <br/>
-                                  Giới hạn kích thước ảnh ở mức tiêu chuẩn.
-                              </p>
-                          </div>
+                  <div className="space-y-4">
+                      <h3 className={`text-[16px] font-black ${settings.modelType === 'nano' ? 'text-violet-400' : 'text-sky-400'} uppercase tracking-widest`}>KÍCH THƯỚC</h3>
+                      <div className="grid grid-cols-3 gap-3">
+                          {['1K', '2K', '4K'].map((size) => (
+                              <button
+                                  key={size}
+                                  onClick={() => onSettingsChange({ imageSize: size as any, modelType: settings.modelType })}
+                                  className={`py-4 rounded-xl border-2 font-black text-[16px] transition-all flex items-center justify-center ${
+                                      settings.imageSize === size 
+                                      ? `${settings.modelType === 'nano' ? 'bg-violet-500 border-violet-400' : 'bg-sky-500 border-sky-400'} text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]` 
+                                      : 'bg-zinc-900/50 border-white/5 text-gray-500 hover:border-white/20'
+                                  }`}
+                              >
+                                  {size}
+                              </button>
+                          ))}
                       </div>
-                  )}
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-white/5">
+                      <p className="text-[10px] text-gray-400 italic leading-relaxed">
+                          * Bạn cần nhập hoặc chọn API Key trả phí để sử dụng mô hình {settings.modelType === 'nano' ? 'Nano Banana' : 'Nano Banana Pro'}. Xem <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className={`${settings.modelType === 'nano' ? 'text-violet-400' : 'text-sky-400'} underline hover:opacity-80`}>tài liệu thanh toán</a>.
+                      </p>
+                      
+                      <div className="space-y-3">
+                          <div className="relative group">
+                              <KeyIcon className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${settings.modelType === 'nano' ? 'text-violet-500' : 'text-sky-500'} group-focus-within:scale-110 transition-transform`} />
+                              <input 
+                                  type="password"
+                                  value={settings.customApiKey || ''}
+                                  onChange={e => onSettingsChange({ customApiKey: e.target.value })}
+                                  className={`w-full bg-black/40 border-2 ${settings.modelType === 'nano' ? 'border-violet-500/20 focus:border-violet-500' : 'border-sky-500/20 focus:border-sky-500'} rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none transition-all placeholder:text-zinc-800`}
+                                  placeholder="NHẬP API KEY CỦA BẠN..."
+                              />
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                              <div className="h-[1px] flex-1 bg-white/5"></div>
+                              <span className="text-[9px] font-black text-zinc-700 uppercase tracking-widest">HOẶC</span>
+                              <div className="h-[1px] flex-1 bg-white/5"></div>
+                          </div>
+
+                          <button
+                              onClick={async () => {
+                                  if ((window as any).aistudio) {
+                                      await (window as any).aistudio.openSelectKey();
+                                  }
+                              }}
+                              className={`w-full py-4 ${settings.modelType === 'nano' ? 'bg-violet-500/5 border-violet-500/30 text-violet-400 hover:bg-violet-500/10' : 'bg-sky-500/5 border-sky-500/30 text-sky-400 hover:bg-sky-500/10'} border rounded-xl flex items-center justify-center gap-3 group transition-all active:scale-[0.98]`}
+                          >
+                              <FingerPrintIcon className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                              <span className="text-[12px] font-black uppercase tracking-widest">CHỌN TỪ HỆ THỐNG</span>
+                          </button>
+                      </div>
+                  </div>
               </div>
           )}
       </div>
   );
+
   const renderArchitectureRenderSettings = () => {
       return (
           <div className="space-y-4">
@@ -519,7 +505,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const renderBabyUltrasoundSettings = () => {
     const isUltrasoundMode = settings.babyPredictMode === 'ultrasound';
     const isClarifyTask = settings.ultrasoundTask === 'clarify';
-    const isNanoPro = settings.modelType === 'nano-pro';
+    const isPro = settings.modelType === 'pro-image';
     return (
         <div className="space-y-4">
             <div className="flex bg-zinc-800/50 rounded-xl p-1 mb-4 border border-zinc-700">
@@ -538,7 +524,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     <div className={`bg-white w-3 h-3 rounded-full transition-transform ${settings.enableUpscale ? 'translate-x-5' : ''}`} />
                 </div>
             </div>
-            {isNanoPro && (
+            {isPro && (
                 <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/40 rounded-xl p-3 flex items-center gap-3 animate-pulse">
                     <ComputerDesktopIcon className="w-6 h-6 text-yellow-500" />
                     <div className="flex flex-col">
@@ -951,6 +937,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                     Xóa nền AI
                   </button>
                   <button 
+                    onClick={() => onSettingsChange({ removeBackgroundMode: 'clean-bg' })}
+                    className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${settings.removeBackgroundMode === 'clean-bg' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-gray-500 hover:text-gray-300'}`}
+                  >
+                    Làm sạch nền
+                  </button>
+                  <button 
                     onClick={() => onSettingsChange({ removeBackgroundMode: 'remove-object' })}
                     className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${settings.removeBackgroundMode === 'remove-object' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-gray-500 hover:text-gray-300'}`}
                   >
@@ -976,6 +968,80 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           >
                             <PaintBrushIcon className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Bắt đầu tô vùng xóa
                           </button>
+                      </div>
+                  </div>
+              ) : settings.removeBackgroundMode === 'clean-bg' ? (
+                  <div className="space-y-6">
+                      <div className="bg-[#151515] border border-white/5 rounded-3xl p-6 shadow-xl space-y-6">
+                          <div className="flex flex-col items-center gap-4">
+                              <div className="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center border border-indigo-500/20">
+                                  <SparklesIcon className="w-8 h-8 text-indigo-400" />
+                              </div>
+                              <div className="text-center">
+                                  <h3 className="text-xs font-black text-white uppercase tracking-widest mb-2">Làm sạch nền AI</h3>
+                                  <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
+                                      Hệ thống sẽ phân tích và làm sạch các chi tiết thừa, nhiễu hoặc các vật thể nhỏ không mong muốn ở phông nền, giúp chủ thể nổi bật hơn.
+                                  </p>
+                              </div>
+                              <div className="w-full space-y-4">
+                                  <div className="flex justify-between items-center">
+                                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Độ làm sạch</span>
+                                      <span className="text-[10px] font-black text-indigo-400">{(settings.cleanBgIntensity || 0.85) >= 0.8 ? 'MẠNH' : (settings.cleanBgIntensity || 0.85) >= 0.5 ? 'TRUNG BÌNH' : 'NHẸ'}</span>
+                                  </div>
+                                  <input 
+                                    type="range" 
+                                    min="0.1" 
+                                    max="1.0" 
+                                    step="0.05" 
+                                    value={settings.cleanBgIntensity || 0.85} 
+                                    onChange={(e) => onSettingsChange({ cleanBgIntensity: parseFloat(e.target.value) })}
+                                    className="w-full h-1.5 bg-zinc-800 rounded-full appearance-none cursor-pointer accent-indigo-500"
+                                  />
+                              </div>
+                          </div>
+                      </div>
+
+                      <div className="bg-[#151515] border border-white/5 rounded-3xl p-6 shadow-xl space-y-5">
+                          <h3 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                              <AdjustmentsHorizontalIcon className="w-4 h-4 text-indigo-400" /> Công cụ chỉnh sửa chuyên nghiệp
+                          </h3>
+                          <div className="space-y-3">
+                              {[
+                                  { key: 'cleanBgRemoveDetails', label: 'Tẩy các chi tiết thừa' },
+                                  { key: 'cleanBgEvenColor', label: 'Làm đều màu phông' },
+                                  { key: 'cleanBgReduceNoise', label: 'Giảm Noise/Nhiễu hạt' },
+                                  { key: 'cleanBgSharpen', label: 'Tăng độ nét phông' }
+                              ].map((item) => (
+                                  <label key={item.key} className="flex items-center gap-3 cursor-pointer group">
+                                      <div className="relative flex items-center">
+                                          <input 
+                                              type="checkbox" 
+                                              checked={!!(settings as any)[item.key]} 
+                                              onChange={(e) => onSettingsChange({ [item.key]: e.target.checked } as Partial<GenerationSettings>)}
+                                              className="sr-only"
+                                          />
+                                          <div className={`w-5 h-5 rounded-md border transition-all flex items-center justify-center ${ (settings as any)[item.key] ? 'bg-indigo-600 border-indigo-500 shadow-[0_0_10px_rgba(79,70,229,0.4)]' : 'bg-black/40 border-white/10 group-hover:border-white/20' }`}>
+                                              { (settings as any)[item.key] && <CheckIcon className="w-3.5 h-3.5 text-white stroke-[3px]" /> }
+                                          </div>
+                                      </div>
+                                      <span className={`text-[11px] font-bold transition-colors ${ (settings as any)[item.key] ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-400' }`}>
+                                          {item.label}
+                                      </span>
+                                  </label>
+                              ))}
+                          </div>
+                      </div>
+
+                      <div className="bg-[#151515] border border-white/5 rounded-3xl p-6 shadow-xl space-y-4">
+                          <h3 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                              <PencilIcon className="w-4 h-4 text-indigo-400" /> Tùy chỉnh thêm
+                          </h3>
+                          <textarea 
+                              value={settings.cleanBgCustomPrompt || ''}
+                              onChange={(e) => onSettingsChange({ cleanBgCustomPrompt: e.target.value })}
+                              placeholder="VD: làm cho màu xanh của nền đậm hơn một chút..."
+                              className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-[11px] text-gray-200 h-24 focus:border-indigo-500/50 outline-none resize-none transition-all placeholder:text-gray-700"
+                          />
                       </div>
                   </div>
               ) : (
@@ -1028,7 +1094,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4.5 rounded-2xl transition-all uppercase text-xs tracking-[0.2em] shadow-2xl shadow-indigo-900/30 flex items-center justify-center gap-3 active:scale-95 group"
               >
                 <ScissorsIcon className="w-6 h-6 group-hover:rotate-12 transition-transform" /> 
-                {settings.removeBackgroundMode === 'remove-object' ? 'THỰC HIỆN XÓA VẬT THỂ AI' : 'THỰC HIỆN XÓA NỀN AI'}
+                {settings.removeBackgroundMode === 'remove-object' ? 'THỰC HIỆN XÓA VẬT THỂ AI' : settings.removeBackgroundMode === 'clean-bg' ? 'THỰC HIỆN LÀM SẠCH NỀN AI' : 'THỰC HIỆN XÓA NỀN AI'}
               </button>
           </div>
       );
@@ -1254,8 +1320,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                         onClick={() => onSettingsChange({ userPrompt: PRESERVE_ORIGINAL_PROMPT })} 
                         className={`w-full bg-blue-500/5 hover:bg-blue-500/10 border p-4 rounded-2xl text-left transition-all flex items-center gap-4 group ${settings.userPrompt === PRESERVE_ORIGINAL_PROMPT ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-900/20' : 'border-blue-500/20'}`}
                       >
-                        <div className="p-2 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform">
-                          <ShieldCheckIcon className="w-6 h-6 text-blue-400" />
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-blue-500/30 group-hover:scale-110 transition-transform flex-shrink-0 flex items-center justify-center shadow-lg shadow-blue-900/20">
+                          <FingerPrintIcon className="w-6 h-6 text-blue-400" />
                         </div>
                         <div className="flex-1">
                           <div className="text-[11px] font-black text-white uppercase flex items-center justify-between tracking-tight">
@@ -1877,7 +1943,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <div className="mt-auto pt-6 border-t border-white/5 flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity">
             <div className="text-[10px] text-gray-400 font-black uppercase tracking-[0.1em]">© NGUYỄN HỮU CHÍNH</div>
-            <div className="text-[9px] text-gray-500 font-medium tracking-widest">VIP PRO EDITION v3.5.5</div>
+            <div className="text-[9px] text-gray-500 font-medium tracking-widest">TOOL MAGIC NHC VIP PRO v3.5.5</div>
         </div>
     </div>
   );

@@ -32,7 +32,7 @@ import RulesModal from './components/RulesModal';
 
 import { ArrowUpTrayIcon, ArrowDownTrayIcon, ArrowLeftIcon, PhotoIcon, XMarkIcon, SparklesIcon, ScissorsIcon, PlusIcon, TrashIcon, ArrowPathIcon, CheckIcon, PlayCircleIcon, FaceSmileIcon, SpeakerWaveIcon, PaintBrushIcon, ClockIcon, UserCircleIcon, ShoppingBagIcon, SwatchIcon, Squares2X2Icon, ViewColumnsIcon, ChevronLeftIcon, ChevronRightIcon, ComputerDesktopIcon, AdjustmentsHorizontalIcon, SquaresPlusIcon, PencilIcon, ShieldCheckIcon, ChevronUpIcon, ChevronDownIcon, LockClosedIcon, UserIcon, ShieldExclamationIcon, FingerPrintIcon, MapPinIcon, RocketLaunchIcon, PresentationChartBarIcon, SunIcon, ScaleIcon, HeartIcon, HomeModernIcon, PrinterIcon, ArrowRightOnRectangleIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
-const TST_API_KEY_STORAGE_KEY = 'tst_api_key';
+const CUSTOM_API_KEY_STORAGE_KEY = 'custom_api_key';
 
 const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
     userPrompt: '',
@@ -54,13 +54,19 @@ const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
     minimalCustomization: false,
     referenceImage: null,
     referenceImagePreview: null,
-    modelType: 'free' as ModelType,
+    modelType: 'nano' as ModelType,
     imageSize: '2K' as '1K' | '2K' | '4K',
     aspectRatio: 'auto',
     isPortraitFocus: false,
     shotType: 'none',
     straightenIntensity: 1.0,
     removeBackgroundMode: 'remove-bg',
+    cleanBgIntensity: 0.85,
+    cleanBgRemoveDetails: true,
+    cleanBgEvenColor: true,
+    cleanBgReduceNoise: true,
+    cleanBgSharpen: true,
+    cleanBgCustomPrompt: '',
     lifestyleTheme: 'Paris Travel',
     mockupTheme: 'Store Shelf',
     lightTheme: 'Studio Soft',
@@ -509,8 +515,8 @@ const App: React.FC = () => {
   })();
 
   const setImageSettings = (newSettings: Partial<GenerationSettings>) => {
-      if (newSettings.tstApiKey !== undefined) {
-          const syncTstKey = (prev: GenerationSettings): GenerationSettings => ({ ...prev, tstApiKey: newSettings.tstApiKey });
+      if (newSettings.customApiKey !== undefined) {
+          const syncTstKey = (prev: GenerationSettings): GenerationSettings => ({ ...prev, customApiKey: newSettings.customApiKey });
           setConceptSettings(syncTstKey);
           setRestorationSettings(syncTstKey);
           setBackgroundSwapSettings(syncTstKey);
@@ -573,9 +579,9 @@ const App: React.FC = () => {
       if (storedHistory) setVoiceHistory(JSON.parse(storedHistory));
     } catch (e) {}
 
-    const savedTstApiKey = localStorage.getItem(TST_API_KEY_STORAGE_KEY) || '';
+    const savedTstApiKey = localStorage.getItem(CUSTOM_API_KEY_STORAGE_KEY) || '';
     if (savedTstApiKey) {
-      const applySavedKey = (prev: GenerationSettings): GenerationSettings => ({ ...prev, tstApiKey: savedTstApiKey });
+      const applySavedKey = (prev: GenerationSettings): GenerationSettings => ({ ...prev, customApiKey: savedTstApiKey });
       setConceptSettings(applySavedKey);
       setRestorationSettings(applySavedKey);
       setBackgroundSwapSettings(applySavedKey);
@@ -605,10 +611,10 @@ const App: React.FC = () => {
   }, [voiceHistory]);
 
   useEffect(() => {
-    const key = imageSettings.tstApiKey?.trim() || '';
-    if (key) localStorage.setItem(TST_API_KEY_STORAGE_KEY, key);
-    else localStorage.removeItem(TST_API_KEY_STORAGE_KEY);
-  }, [imageSettings.tstApiKey]);
+    const key = imageSettings.customApiKey?.trim() || '';
+    if (key) localStorage.setItem(CUSTOM_API_KEY_STORAGE_KEY, key);
+    else localStorage.removeItem(CUSTOM_API_KEY_STORAGE_KEY);
+  }, [imageSettings.customApiKey]);
 
   useEffect(() => {
     if (viewMode !== 'home') {
@@ -1015,7 +1021,7 @@ const App: React.FC = () => {
       for (const img of images) {
           const url = img.generatedImageUrl || img.originalPreviewUrl;
           if (url) {
-              const a = document.createElement('a'); a.href = url; a.download = `nhc_${img.id}.png`; a.click();
+              const a = document.createElement('a'); a.href = url; a.download = `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${img.id}.png`; a.click();
               await new Promise(r => setTimeout(r, 300));
           }
       }
@@ -1075,7 +1081,7 @@ const App: React.FC = () => {
       }
 
       const link = document.createElement('a');
-      link.download = `nhc_print_sheet_${printLayout}.png`;
+      link.download = `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${printLayout}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
   };
@@ -1686,81 +1692,136 @@ const App: React.FC = () => {
   );
 
   const renderLoginUI = () => (
-    <div className="min-h-screen flex items-center justify-center bg-[#050505] p-6 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#050505] bg-grid p-6 relative overflow-hidden">
         {/* Background effects */}
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-sky-500/20 blur-[120px] rounded-full animate-pulse"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
-        <div className="w-full max-w-md relative z-10 animate-fade-in">
-            <div className="flex flex-col items-center mb-10">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-sky-500/20 mb-6 group hover:scale-110 transition-transform duration-500">
-                    <ShieldCheckIcon className="w-10 h-10 text-white" />
+        <div className="w-full max-w-5xl flex flex-col lg:flex-row items-center justify-center gap-12 relative z-10 animate-fade-in">
+            {/* Login Form Section */}
+            <div className="w-full max-w-md">
+                <div className="flex flex-col items-center mb-10">
+                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-sky-500/20 mb-6 group hover:scale-110 transition-transform duration-500">
+                        <ShieldCheckIcon className="w-10 h-10 text-white" />
+                    </div>
+                    <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-2">TOOL MAGIC NHC PHOTOSHOP VIP PRO</h1>
+                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em]">Xác thực quyền truy cập</p>
                 </div>
-                <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-2">Hệ Thống VIP PRO</h1>
-                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em]">Xác thực quyền truy cập</p>
+
+                <form onSubmit={handleLogin} className="bg-zinc-900/40 backdrop-blur-2xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl space-y-6">
+                    {loginError && (
+                        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 animate-shake">
+                            <ShieldExclamationIcon className="w-5 h-5 text-red-500" />
+                            <span className="text-xs font-bold text-red-400 uppercase tracking-tight">{loginError}</span>
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-sky-500 uppercase tracking-widest ml-1 flex items-center justify-between">
+                                Mã xác thực 2FA
+                                <span className="text-[8px] bg-sky-500/10 px-2 py-0.5 rounded text-sky-400">REQUIRED</span>
+                            </label>
+                            <div className="relative group">
+                                <FingerPrintIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 group-focus-within:text-sky-500 transition-colors" />
+                                <input 
+                                    type={showTfa ? "text" : "password"} 
+                                    value={loginForm.tfa} 
+                                    onChange={e => setLoginForm(prev => ({ ...prev, tfa: e.target.value }))}
+                                    className="w-full bg-black/40 border-2 border-sky-500/20 rounded-2xl py-4 pl-12 pr-12 text-sm text-white focus:border-sky-500 outline-none transition-all placeholder:text-zinc-800 font-black tracking-[0.5em] uppercase"
+                                    placeholder="MÃ 2FA..."
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowTfa(!showTfa)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-sky-500 transition-colors"
+                                >
+                                    {showTfa ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between px-1">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <div 
+                                onClick={() => setRememberMe(!rememberMe)}
+                                className={`w-5 h-5 rounded-md border transition-all flex items-center justify-center ${rememberMe ? 'bg-sky-600 border-sky-500 shadow-lg shadow-sky-900/20' : 'bg-black/40 border-white/10'}`}
+                            >
+                                {rememberMe && <CheckIcon className="w-3.5 h-3.5 text-white stroke-[3px]" />}
+                            </div>
+                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">Ghi nhớ thông tin tài khoản</span>
+                        </label>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        className="w-full py-5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-sky-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
+                    >
+                        Đăng nhập ngay
+                        <RocketLaunchIcon className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    </button>
+
+                    <div className="pt-4 text-center">
+                        <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">Hệ thống bảo mật bởi NHC Photoshop Team</p>
+                    </div>
+                </form>
             </div>
 
-            <form onSubmit={handleLogin} className="bg-zinc-900/40 backdrop-blur-2xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl space-y-6">
-                {loginError && (
-                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 animate-shake">
-                        <ShieldExclamationIcon className="w-5 h-5 text-red-500" />
-                        <span className="text-xs font-bold text-red-400 uppercase tracking-tight">{loginError}</span>
-                    </div>
-                )}
+            {/* Bank Info Section */}
+            <div className="w-full max-w-sm bg-zinc-900/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
+                {/* Rainbow Border Effect */}
+                <div className="absolute inset-0 rounded-[2.5rem] p-[1px] bg-gradient-to-br from-green-500 via-sky-500 to-blue-600 opacity-50">
+                    <div className="w-full h-full bg-zinc-900 rounded-[2.5rem]"></div>
+                </div>
 
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-sky-500 uppercase tracking-widest ml-1 flex items-center justify-between">
-                            Mã xác thực 2FA
-                            <span className="text-[8px] bg-sky-500/10 px-2 py-0.5 rounded text-sky-400">REQUIRED</span>
-                        </label>
-                        <div className="relative group">
-                            <FingerPrintIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 group-focus-within:text-sky-500 transition-colors" />
-                            <input 
-                                type={showTfa ? "text" : "password"} 
-                                value={loginForm.tfa} 
-                                onChange={e => setLoginForm(prev => ({ ...prev, tfa: e.target.value }))}
-                                className="w-full bg-black/40 border-2 border-sky-500/20 rounded-2xl py-4 pl-12 pr-12 text-sm text-white focus:border-sky-500 outline-none transition-all placeholder:text-zinc-800 font-black tracking-[0.5em] uppercase"
-                                placeholder="MÃ 2FA..."
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowTfa(!showTfa)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-sky-500 transition-colors"
-                            >
-                                {showTfa ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                            </button>
+                <div className="relative z-10 space-y-6">
+                    <div className="bg-white rounded-3xl p-6 flex flex-col items-center gap-4 shadow-inner">
+                        <p className="text-[11px] font-black text-zinc-800 uppercase tracking-widest">Quét mã để chuyển khoản</p>
+                        <img 
+                            src="https://img.vietqr.io/image/VPB-0828998995-qr_only.png" 
+                            alt="VietQR" 
+                            className="w-full aspect-square object-contain"
+                            referrerPolicy="no-referrer"
+                        />
+                        <div className="pt-2 border-t border-zinc-100 w-full flex justify-center">
+                            <img src="https://api.vietqr.io/img/VPB.png" alt="VPBank" className="h-8 object-contain" referrerPolicy="no-referrer" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 pt-4">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Tên Ngân Hàng :</span>
+                            <span className="text-sm font-black text-white uppercase">VPBank</span>
+                        </div>
+                        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Chủ Tài Khoản :</span>
+                            <span className="text-sm font-black text-white uppercase">Nguyễn Hữu Chính</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-tight">SĐT + ZALO +</span>
+                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-tight">STK :</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl font-black text-sky-500 tracking-wider">0828998995</span>
+                                <button 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText('0828998995');
+                                        alert('Đã sao chép số tài khoản!');
+                                    }}
+                                    className="bg-zinc-800 hover:bg-zinc-700 text-[9px] font-black text-zinc-400 px-3 py-1.5 rounded-lg transition-colors uppercase tracking-widest"
+                                >
+                                    Chép
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <div className="flex items-center justify-between px-1">
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                        <div 
-                            onClick={() => setRememberMe(!rememberMe)}
-                            className={`w-5 h-5 rounded-md border transition-all flex items-center justify-center ${rememberMe ? 'bg-sky-600 border-sky-500 shadow-lg shadow-sky-900/20' : 'bg-black/40 border-white/10'}`}
-                        >
-                            {rememberMe && <CheckIcon className="w-3.5 h-3.5 text-white stroke-[3px]" />}
-                        </div>
-                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">Ghi nhớ thông tin tài khoản</span>
-                    </label>
-                </div>
-
-                <button 
-                    type="submit" 
-                    className="w-full py-5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-sky-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 group"
-                >
-                    Đăng nhập ngay
-                    <RocketLaunchIcon className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                </button>
-
-                <div className="pt-4 text-center">
-                    <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">Hệ thống bảo mật bởi NHC Photoshop Team</p>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
   );
@@ -1768,7 +1829,7 @@ const App: React.FC = () => {
   if (!isLoggedIn) return renderLoginUI();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-gray-200 font-sans overflow-hidden selection:bg-sky-500/30">
+    <div className="min-h-screen flex flex-col bg-[#0a0a0a] bg-grid text-gray-200 font-sans overflow-hidden selection:bg-sky-500/30">
         <header className="flex-none flex items-center justify-between px-8 py-5 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-[150]">
              <div className="w-1/3 flex items-center gap-4">
                  {viewMode === 'home' && (

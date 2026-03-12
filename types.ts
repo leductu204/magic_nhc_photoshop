@@ -33,7 +33,7 @@ export enum WeatherOption {
   FOG = "Sương mù"
 }
 
-export type ModelType = 'free' | 'nano' | 'nano-pro';
+export type ModelType = 'nano' | 'pro-image';
 export type ShotType = 'half-body' | 'close-up' | 'none';
 
 export type PrintLayoutType = '4x6' | '3x4' | '2x3' | 'mixed';
@@ -82,7 +82,13 @@ export interface GenerationSettings {
     archType?: 'interior' | 'exterior'; // Loại kiến trúc
     upscaleIntensity?: number; // Cường độ làm nét
     expandDirection?: 'all' | 'horizontal' | 'vertical' | 'left' | 'right' | 'top' | 'bottom' | 'none'; // Hướng mở rộng
-    removeBackgroundMode?: 'remove-bg' | 'remove-object'; // Chế độ xóa nền/vật thể
+    removeBackgroundMode?: 'remove-bg' | 'remove-object' | 'clean-bg'; // Chế độ xóa nền/vật thể
+    cleanBgIntensity?: number; // Cường độ làm sạch
+    cleanBgRemoveDetails?: boolean; // Tẩy chi tiết thừa
+    cleanBgEvenColor?: boolean; // Làm đều màu phông
+    cleanBgReduceNoise?: boolean; // Giảm noise
+    cleanBgSharpen?: boolean; // Tăng độ nét phông
+    cleanBgCustomPrompt?: string; // Tùy chỉnh thêm cho làm sạch nền
     preserveFace?: boolean; // Bảo toàn nét mặt
     // Painting Features
     paintingStyle?: string;
@@ -97,7 +103,7 @@ export interface GenerationSettings {
     restoSuperPortrait?: boolean;
     restoQualityEnhance?: boolean;
     restoEnableAdvanced?: boolean;
-    tstApiKey?: string;
+    customApiKey?: string;
 }
 
 export interface ProfileSettings {

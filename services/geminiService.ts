@@ -89,8 +89,9 @@ const CODEFORMER_EMULATION_PROMPT = {
     "output_requirement": "Remove scratches, artifacts, and blur, high-end face reconstruction."
 };
 
-const getAI = () => {
-    const apiKey = process.env.GEMINI_API_KEY;
+
+const getAI = (modelType?: string, customApiKey?: string) => {
+    const apiKey = customApiKey || ((modelType === 'pro-image' || modelType === 'nano') ? process.env.API_KEY : process.env.GEMINI_API_KEY);
     return new GoogleGenAI({ apiKey });
 };
 
@@ -99,7 +100,7 @@ export const generateFaceStraightenImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { straightenIntensity = 1.0, userPrompt } = settings;
 
@@ -116,7 +117,7 @@ export const generateFaceStraightenImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -136,7 +137,7 @@ export const generateLifestyleImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { lifestyleTheme = "Paris Travel", userPrompt, enableUpscale } = settings;
 
@@ -155,7 +156,7 @@ export const generateLifestyleImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -175,7 +176,7 @@ export const generateMockupImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { mockupTheme = "Store Shelf", userPrompt, enableUpscale } = settings;
 
@@ -196,7 +197,7 @@ export const generateMockupImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -216,7 +217,7 @@ export const generateLightingEffectImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { lightTheme = "Studio Soft", userPrompt, lightIntensity = 0.8, enableUpscale } = settings;
 
@@ -242,7 +243,7 @@ export const generateLightingEffectImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
                 parts: [
                     { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -262,7 +263,7 @@ export const generateRemoveBackgroundImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { userPrompt, enableUpscale, removeBackgroundMode = 'remove-bg' } = settings;
 
@@ -279,6 +280,30 @@ export const generateRemoveBackgroundImage = async (
             ${userPrompt ? `Additional Instruction: ${userPrompt}` : ""}
             
             STYLE: Professional photo retouching, seamless object removal.
+            `;
+        } else if (removeBackgroundMode === 'clean-bg') {
+            const { cleanBgIntensity = 0.85, cleanBgRemoveDetails, cleanBgEvenColor, cleanBgReduceNoise, cleanBgSharpen, cleanBgCustomPrompt } = settings;
+            
+            const cleanupModules = [];
+            if (cleanBgRemoveDetails) cleanupModules.push("- Tẩy các chi tiết thừa, vật thể nhỏ gây xao nhãng ở phông nền.");
+            if (cleanBgEvenColor) cleanupModules.push("- Làm đều màu phông nền, xử lý các vùng màu loang lổ hoặc không đồng nhất.");
+            if (cleanBgReduceNoise) cleanupModules.push("- Giảm Noise/Nhiễu hạt, làm mịn phông nền nhưng vẫn giữ được độ chân thực.");
+            if (cleanBgSharpen) cleanupModules.push("- Tăng độ nét phông, khôi phục các chi tiết nền bị mờ nhòe một cách tự nhiên.");
+
+            prompt = `
+            TASK: AI BACKGROUND CLEANUP & PROFESSIONAL RETOUCHING.
+            INSTRUCTION: 
+            1. Analyze the image and identify the main subject.
+            2. Clean the background with INTENSITY: ${cleanBgIntensity}/1.0.
+            3. Apply the following cleanup modules:
+            ${cleanupModules.join('\n            ')}
+            4. Maintain the overall color scheme and lighting of the original background unless specified otherwise.
+            5. The goal is to make the background look cleaner, more professional, and "studio-quality" while keeping the main subject perfectly intact.
+            ${cleanBgCustomPrompt ? `6. CUSTOM REQUEST: ${cleanBgCustomPrompt}` : ""}
+            ${userPrompt ? `7. ADDITIONAL CONTEXT: ${userPrompt}` : ""}
+            
+            ${enableUpscale ? "APPLY HIGH-DEFINITION TEXTURE ENHANCEMENT & EDGE REFINEMENT." : ""}
+            STYLE: Professional studio cleanup, high-end commercial photo retouching.
             `;
         } else {
             prompt = `
@@ -297,7 +322,7 @@ export const generateRemoveBackgroundImage = async (
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -317,7 +342,7 @@ export const generateSymmetricEditImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { symmetryIntensity = 0.8, balanceMode = 'full', userPrompt, enableUpscale } = settings;
 
@@ -336,7 +361,7 @@ export const generateSymmetricEditImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -357,7 +382,7 @@ export const generateBabyUltrasoundImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let fatherBase64 = await resizeImage(fatherFile);
         let motherBase64 = await resizeImage(motherFile);
         const { babyGender = 'ngau-nhien', babyStyle = 'realistic', userPrompt, enableUpscale, babyFacialDetailIntensity = 0.8, babyStrictFeatures = false, modelType } = settings;
@@ -365,7 +390,7 @@ export const generateBabyUltrasoundImage = async (
         const genderPrompt = babyGender === 'nam' ? "Male (Boy)" : babyGender === 'nu' ? "Female (Girl)" : "Random (Boy or Girl)";
         const stylePrompt = babyStyle === 'ultrasound' ? "3D Cinematic Medical Ultrasound rendering style" : "High-definition newborn portrait photography style";
 
-        const selectedModel = 'gemini-3-flash-preview';
+        const selectedModel = (modelType === 'pro-image') ? 'gemini-3.1-pro-preview' : (modelType === 'nano') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
 
         const strictPrompt = babyStrictFeatures ? `
         !!! SURGICAL FIDELITY RECONSTRUCTION - ABSOLUTE BIOLOGICAL CLONING !!!
@@ -406,7 +431,7 @@ export const generateBabyUltrasoundImage = async (
                 { text: prompt }
               ] 
             },
-            config: undefined
+            config: (modelType === 'pro-image' || modelType === 'nano') ? { imageConfig: { imageSize: '4K', aspectRatio: 'auto' } } : undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -420,11 +445,11 @@ export const generateBabyFromUltrasoundImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let ultrasoundBase64 = await resizeImage(ultrasoundFile);
         const { ultrasoundTask = 'predict-face', userPrompt, enableUpscale, babyFacialDetailIntensity = 0.8, babyStrictFeatures = false, modelType } = settings;
 
-        const selectedModel = 'gemini-3-flash-preview';
+        const selectedModel = (modelType === 'pro-image') ? 'gemini-3.1-pro-preview' : (modelType === 'nano') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
 
         const strictPrompt = babyStrictFeatures ? `
         !!! ULTRA-PRECISION FACE-CENTERED RECONSTRUCTION !!!
@@ -474,7 +499,7 @@ export const generateBabyFromUltrasoundImage = async (
                 { text: prompt }
               ] 
             },
-            config: undefined
+            config: (modelType === 'pro-image' || modelType === 'nano') ? { imageConfig: { imageSize: '4K', aspectRatio: 'auto' } } : undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -488,7 +513,7 @@ export const generateArchitectureRenderImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { archStyle = "Modern", archType = "interior", userPrompt, enableUpscale } = settings;
 
@@ -512,7 +537,7 @@ export const generateArchitectureRenderImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
               parts: [
                 { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -532,7 +557,7 @@ export const generateUpscaleExpandImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         let originalBase64 = await resizeImage(originalFile);
         const { upscaleIntensity = 0.8, expandDirection = 'all', userPrompt, enableUpscale } = settings;
 
@@ -557,7 +582,7 @@ export const generateUpscaleExpandImage = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
                 parts: [
                     { inlineData: { data: originalBase64, mimeType: 'image/jpeg' } },
@@ -586,8 +611,8 @@ export const generateStyledImage = async (
         subjectMatchSceneColor, sceneMatchSubjectColor, creativeEffect, effectIntensity
     } = settings;
 
-    const ai = getAI();
-    const selectedModel = 'gemini-3-flash-preview';
+    const ai = getAI(modelType, settings.customApiKey);
+    const selectedModel = (modelType === 'pro-image') ? 'gemini-3.1-pro-preview' : (modelType === 'nano') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
     
     let originalBase64 = await resizeImage(originalFile);
     let mimeType = originalFile.type;
@@ -596,8 +621,12 @@ export const generateStyledImage = async (
     let targetRatio = "1:1";
     let effectiveImageSize: any = imageSize;
 
-    if (aspectRatio && aspectRatio !== 'auto') {
-        targetRatio = aspectRatio;
+    if (modelType === 'pro-image' || modelType === 'nano') {
+        if (aspectRatio && aspectRatio !== 'auto') {
+            targetRatio = aspectRatio;
+        } else {
+            targetRatio = await getProAutoRatio(originalFile);
+        }
     }
 
     const preservationFlags = [];
@@ -674,7 +703,7 @@ export const generateStyledImage = async (
     const response = await ai.models.generateContent({
       model: selectedModel, 
       contents: { parts: [{ inlineData: { mimeType, data: originalBase64 } }, { text: finalPrompt }] },
-      config: undefined
+      config: (modelType === 'pro-image' || modelType === 'nano') ? { imageConfig: { imageSize: effectiveImageSize, aspectRatio: targetRatio } } : undefined
     });
 
     const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -688,9 +717,9 @@ export const generateBackgroundSwapImage = async (
     settings: GenerationSettings
 ): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(settings.modelType, settings.customApiKey);
         const { userPrompt, referenceImage, modelType, imageSize, aspectRatio, enableUpscale, preserveFace = true } = settings;
-        const selectedModel = 'gemini-3-flash-preview';
+        const selectedModel = (modelType === 'pro-image') ? 'gemini-3.1-pro-preview' : (modelType === 'nano') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
 
         let originalBase64 = await resizeImage(originalFile);
         let mimeType = originalFile.type;
@@ -725,7 +754,7 @@ export const generateBackgroundSwapImage = async (
         const response = await ai.models.generateContent({
             model: selectedModel,
             contents: { parts: contentParts },
-            config: undefined
+            config: (modelType === 'pro-image' || modelType === 'nano') ? { imageConfig: { imageSize: imageSize, aspectRatio: aspectRatio === 'auto' ? '1:1' : aspectRatio } } : undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -753,9 +782,9 @@ export const analyzeRestorationImage = async (file: File): Promise<string> => {
 
 export const generatePaintingImage = async (originalFile: File, settings: GenerationSettings): Promise<string> => {
     try {
-        const { userPrompt, modelType, imageSize, aspectRatio, paintingStyle, paintingQualityEnhance, referenceImage } = settings;
-        const ai = getAI();
-        const selectedModel = 'gemini-3-flash-preview';
+        const { userPrompt, modelType, imageSize, aspectRatio, paintingStyle, paintingQualityEnhance, referenceImage, customApiKey } = settings;
+        const ai = getAI(modelType, customApiKey);
+        const selectedModel = (modelType === 'pro-image') ? 'gemini-3.1-pro-preview' : (modelType === 'nano') ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
         
         let originalBase64 = await resizeImage(originalFile);
         let mimeType = originalFile.type;
@@ -792,7 +821,7 @@ export const generatePaintingImage = async (originalFile: File, settings: Genera
         const response = await ai.models.generateContent({
             model: selectedModel,
             contents: { parts: contentParts },
-            config: undefined
+            config: modelType === 'pro-image' ? { imageConfig: { imageSize: imageSize, aspectRatio: aspectRatio === 'auto' ? '1:1' : aspectRatio } } : undefined
         });
 
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -849,7 +878,7 @@ export const generateProfileImage = async (originalFile: File, settings: Profile
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { 
               parts: contentParts 
             },
@@ -866,7 +895,7 @@ export const preprocessClothImage = async (file: File): Promise<Part> => {
         const ai = getAI();
         const initialPart = await fileToPart(file);
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { parts: [initialPart, { text: "Isolate clothing, remove human." }] },
         });
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -879,7 +908,7 @@ export const analyzeImageText = async (file: File, type: 'background' | 'pose'):
         const ai = getAI();
         const imagePart = await fileToPart(file);
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { parts: [imagePart, { text: `Analyze ${type} of this image in Vietnamese.` }] },
         });
         return response.text || "";
@@ -890,7 +919,7 @@ export const generateClothingSwap = async (personImage: Part, clothImage: Part, 
     try {
         const ai = getAI();
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash-image',
             contents: { parts: [personImage, clothImage, { text: "Clothing swap task." }] },
         });
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -902,7 +931,7 @@ export const refineClothingResult = async (resultImagePart: Part, prompt: string
      try {
             const ai = getAI();
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-2.5-flash-image',
                 contents: { parts: [resultImagePart, { text: prompt }] },
             });
             const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
@@ -915,7 +944,7 @@ export const analyzeReferenceImage = async (file: File, mode: 'basic' | 'deep' |
     const ai = getAI();
     const base64Data = await resizeImage(file, 1024, 1024, 0.8);
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash-image',
       contents: { parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Data } }, { text: `Analyze style for ${mode} in Vietnamese.` }] }
     });
     return response.text?.trim() || "";
