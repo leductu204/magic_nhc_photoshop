@@ -1139,12 +1139,20 @@ const App: React.FC = () => {
               className={`group relative flex flex-col items-center justify-center p-10 bg-zinc-900/40 border border-white/5 rounded-[2.5rem] hover:border-sky-500/50 transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden`}
             >
                 <div className={`absolute inset-0 bg-gradient-to-br ${tool.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
-                <div className={`w-24 h-24 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-8 border border-white/5 group-hover:scale-110 transition-transform duration-500 shadow-inner`}>
+                <div className="scan-effect opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                
+                <div className={`w-24 h-24 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-6 border border-white/5 group-hover:scale-110 transition-transform duration-500 shadow-inner`}>
                   <tool.icon className={`w-12 h-12 ${tool.text} group-hover:drop-shadow-[0_0_15px_rgba(14,165,233,0.5)]`} />
                 </div>
                 <span className="text-xl font-black text-white tracking-tight text-center uppercase mb-2">{tool.title}</span>
                 <span className={`text-[10px] ${tool.subText} font-black uppercase tracking-widest text-center opacity-60 group-hover:opacity-100 transition-opacity`}>{tool.desc}</span>
                 
+                <div className="absolute bottom-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
+                    <div className="selection-badge">
+                        <span className="text-sky-400 text-[9px] font-black uppercase tracking-[0.2em]">NHẤN ĐỂ CHỌN</span>
+                    </div>
+                </div>
+
                 {/* Decorative corner element */}
                 <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-white/5 group-hover:bg-sky-500 transition-colors"></div>
             </button>
@@ -1184,8 +1192,9 @@ const App: React.FC = () => {
                     >
                         <div className={`w-full h-full rounded-[2.6rem] bg-[#0d0d0d] flex flex-col items-center justify-center p-10 relative overflow-hidden group`}>
                             <div className={`absolute inset-0 bg-gradient-to-br ${tool.gradient} opacity-10 group-hover:opacity-20 transition-opacity duration-700`}></div>
+                            {isActive && <div className="scan-effect"></div>}
                             
-                            <div className={`w-32 h-32 rounded-[2.5rem] bg-zinc-900/50 flex items-center justify-center mb-10 border border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-700`}>
+                            <div className={`w-32 h-32 rounded-[2.5rem] bg-zinc-900/50 flex items-center justify-center mb-6 border border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-700`}>
                               <tool.icon className={`w-16 h-16 ${tool.text} group-hover:drop-shadow-[0_0_20px_rgba(14,165,233,0.4)]`} />
                             </div>
                             
@@ -1193,9 +1202,10 @@ const App: React.FC = () => {
                             <p className={`${tool.subText} text-center text-[11px] font-black uppercase tracking-widest z-10 opacity-60`}>{tool.desc}</p>
                             
                             {isActive && (
-                              <div className="absolute bottom-10 flex flex-col items-center gap-3 z-10">
-                                <div className="h-px w-12 bg-sky-500/30"></div>
-                                <span className="text-sky-400 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">NHẤN ĐỂ CHỌN</span>
+                              <div className="absolute bottom-4 flex flex-col items-center gap-3 z-10">
+                                <div className="selection-badge">
+                                    <span className="text-sky-400 text-[10px] font-black uppercase tracking-[0.3em]">NHẤN ĐỂ CHỌN</span>
+                                </div>
                               </div>
                             )}
                         </div>
@@ -1937,9 +1947,9 @@ const App: React.FC = () => {
              </div>
         </header>
         <div className="flex-1 overflow-hidden relative">
-            {viewMode === 'home' ? <div className="h-full p-6 flex flex-col items-center justify-start gap-10 overflow-y-auto">{homeDisplayMode === 'grid' ? renderHomeGrid() : renderHomeCarousel()}</div> : viewMode === 'voice' ? <div className="h-full overflow-y-auto p-6">{renderVoiceUI()}</div> : (
+            {viewMode === 'home' ? <div className="h-full p-6 bg-grid flex flex-col items-center justify-start gap-10 overflow-y-auto">{homeDisplayMode === 'grid' ? renderHomeGrid() : renderHomeCarousel()}</div> : viewMode === 'voice' ? <div className="h-full bg-grid overflow-y-auto p-6">{renderVoiceUI()}</div> : (
               <div className="flex flex-row h-[calc(100vh-140px)] w-full overflow-hidden">
-                  <main className="flex-1 p-6 bg-[#0f1012] flex flex-col gap-4 overflow-y-auto">
+                  <main className="flex-1 p-6 bg-[#0f1012] bg-grid flex flex-col gap-4 overflow-y-auto">
                     {viewMode === 'clothing' ? renderClothingUI() : viewMode === 'baby-ultrasound' ? renderBabyUltrasoundUI() : viewMode === 'profile' ? renderProfileUI() : (
                         <>
                             {images.length > 0 ? (
@@ -1976,7 +1986,7 @@ const App: React.FC = () => {
                         </>
                     )}
                   </main>
-                  <aside className="w-[520px] border-l border-gray-800 bg-[#111]">
+                  <aside className="w-[520px] border-l border-gray-800 bg-[#111] bg-grid">
                     <ControlPanel 
                       settings={imageSettings} 
                       onSettingsChange={setImageSettings} 
