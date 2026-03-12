@@ -1849,12 +1849,54 @@ const App: React.FC = () => {
                    </div>
                  )}
                  {viewMode !== 'home' && viewMode !== 'voice' && viewMode !== 'clothing' && (
-                   <button 
-                    onClick={() => setImages(p => p.map(img => ({...img, isSelected: !p.every(x => x.isSelected)})))} 
-                    className="px-5 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all text-gray-300"
-                   >
-                     {images.every(x => x.isSelected) ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-                   </button>
+                   <div className="flex items-center gap-3">
+                     <button 
+                      onClick={() => setViewMode('home')} 
+                      className="px-6 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-900/20 transition-all active:scale-95"
+                     >
+                       Trở về
+                     </button>
+                     <button 
+                      onClick={() => setImages(p => p.map(img => ({...img, isSelected: !p.every(x => x.isSelected)})))} 
+                      className="px-5 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all text-gray-300"
+                     >
+                       {images.every(x => x.isSelected) ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                     </button>
+                     
+                     <button 
+                      onClick={() => {
+                        const selectedCount = images.filter(img => img.isSelected).length;
+                        if (selectedCount === 0) return;
+                        if (window.confirm(`Bạn có chắc chắn muốn xoá ${selectedCount} ảnh đã chọn không?`)) {
+                          setImages(p => p.filter(img => !img.isSelected));
+                        }
+                      }} 
+                      className="px-5 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all text-gray-400 flex items-center gap-2"
+                     >
+                       <TrashIcon className="w-3.5 h-3.5" />
+                       Xoá ảnh đã chọn
+                     </button>
+
+                     <button 
+                      onClick={() => {
+                        if (images.length === 0) return;
+                        images.forEach((img, i) => {
+                          setTimeout(() => {
+                            const a = document.createElement('a');
+                            a.href = img.generatedImageUrl || img.originalPreviewUrl;
+                            a.download = `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${viewMode}-${i}.png`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                          }, i * 200);
+                        });
+                      }} 
+                      className="px-5 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-sky-500/10 hover:border-sky-500/30 hover:text-sky-400 transition-all text-gray-400 flex items-center gap-2"
+                     >
+                       <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+                       Tải Tất Cả Ảnh
+                     </button>
+                   </div>
                  )}
              </div>
              
@@ -1872,14 +1914,6 @@ const App: React.FC = () => {
              </div>
 
              <div className="flex items-center gap-4 justify-end w-1/3">
-                {viewMode !== 'home' && (
-                  <button 
-                    onClick={() => setViewMode('home')} 
-                    className="px-6 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-900/20 transition-all active:scale-95"
-                  >
-                    Trở về
-                  </button>
-                )}
                 <button 
                   onClick={() => setIsRulesOpen(true)} 
                   className="text-red-400 text-[10px] font-black uppercase tracking-widest border border-red-500/20 px-4 py-2 rounded-xl hover:bg-red-500/10 transition-all flex items-center gap-2"
