@@ -1716,7 +1716,7 @@ const App: React.FC = () => {
                     <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-sky-500/20 mb-6 group hover:scale-110 transition-transform duration-500">
                         <ShieldCheckIcon className="w-10 h-10 text-white" />
                     </div>
-                    <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-2">TOOL MAGIC NHC PHOTOSHOP VIP PRO</h1>
+                    <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-2">TOOL MAGIC NHC VIP PRO</h1>
                     <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em]">Xác thực quyền truy cập</p>
                 </div>
 
@@ -1912,7 +1912,7 @@ const App: React.FC = () => {
              
              <div className="flex flex-col items-center w-1/3">
                 <div className="vip-rainbow-container">
-                  <h1 className="text-xl md:text-2xl font-black vip-rainbow-text tracking-tighter">TOOL MAGIC NHC PHOTOSHOP VIP PRO</h1>
+                  <h1 className="text-xl md:text-2xl font-black vip-rainbow-text tracking-tighter">TOOL MAGIC NHC VIP PRO</h1>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="h-px w-8 bg-gradient-to-r from-transparent to-white/20"></div>
