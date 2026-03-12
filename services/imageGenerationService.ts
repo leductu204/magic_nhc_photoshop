@@ -18,7 +18,7 @@ import {
 import { generateWithTramSangTao } from './tramSangTaoService';
 
 const useTram = (settings: GenerationSettings) =>
-  settings.modelType === 'nano' || settings.modelType === 'nano-pro';
+  settings.modelType === 'nano' || settings.modelType === 'pro-image';
 
 const buildPrompt = (settings: GenerationSettings, fallback: string) => ({
   ...settings,

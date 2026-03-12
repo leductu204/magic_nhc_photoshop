@@ -23,7 +23,7 @@ const normalizeAspectRatio = (ratio?: string) => {
 };
 
 const modelFromTier = (modelType: GenerationSettings['modelType']) =>
-  modelType === 'nano-pro' ? 'nano-banana-pro' : 'nano-banana';
+  modelType === 'pro-image' ? 'nano-banana-pro' : 'nano-banana';
 
 const getApiKey = (settings: GenerationSettings) => {
   const envKey =
@@ -32,7 +32,7 @@ const getApiKey = (settings: GenerationSettings) => {
       ? String((globalThis as any).process.env.TRAMSANGTAO_API_KEY)
       : undefined;
 
-  const key = settings.tstApiKey?.trim() || envKey;
+  const key = settings.customApiKey?.trim() || envKey;
   if (!key) throw new Error('Thiếu API Key Trạm Sáng Tạo.');
   return key;
 };
