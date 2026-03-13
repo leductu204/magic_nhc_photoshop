@@ -13,7 +13,6 @@ import {
   generateBabyFromUltrasoundImage as generateBabyFromUltrasoundImageGemini,
   generateArchitectureRenderImage as generateArchitectureRenderImageGemini,
   generateUpscaleExpandImage as generateUpscaleExpandImageGemini,
-  generateProfileImage,
 } from './geminiService';
 import { generateWithTramSangTao } from './tramSangTaoService';
 
@@ -24,6 +23,34 @@ const buildPrompt = (settings: GenerationSettings, fallback: string) => ({
   ...settings,
   userPrompt: settings.userPrompt?.trim() || fallback,
 });
+
+export async function generateProfileImage(file: File, settings: ProfileSettings) {
+  // Profile luôn qua tramSangTao
+  const { gender, subject, attire, hairstyle, hairColor, background, beautifyLevel, customPrompt, customBackgroundColor, customAttireImage } = settings;
+
+  const finalBackground = background === 'TÙY CHỈNH' && customBackgroundColor
+    ? `Solid background with color: ${customBackgroundColor}`
+    : `${background} background`;
+
+  const attireDesc = attire === 'TÙY CHỈNH' && customAttireImage
+    ? 'Use clothing from the provided attire reference image.'
+    : attire;
+
+  const prompt = `Professional AI profile photo. IDENTITY LOCK: preserve face 100%. Gender: ${gender === 'nam' ? 'Male' : 'Female'}. Age: ${subject === 'nguoi-lon' ? 'Adult' : subject === 'thanh-nien' ? 'Youth' : 'Child'}. Clothing: ${attireDesc}. Hairstyle: ${hairstyle}. Hair color: ${hairColor}. Background: ${finalBackground}. Skin beautification: level ${beautifyLevel}/100. Studio headshot, cinematic lighting. ${customPrompt || ''}`.trim();
+
+  const images: File[] = [file];
+  if (customAttireImage) images.push(customAttireImage);
+
+  const genSettings: GenerationSettings = {
+    modelType: (settings as any).modelType || 'pro-image',
+    userPrompt: prompt,
+    customApiKey: (settings as any).customApiKey || '',
+    imageSize: '2K',
+    aspectRatio: '1:1',
+  };
+
+  return generateWithTramSangTao(images, genSettings);
+}
 
 export async function generateStyledImage(file: File, settings: GenerationSettings) {
   if (!useTram(settings)) return generateStyledImageGemini(file, settings);
@@ -91,5 +118,3 @@ export async function generateUpscaleExpandImage(file: File, settings: Generatio
   if (!useTram(settings)) return generateUpscaleExpandImageGemini(file, settings);
   return generateWithTramSangTao([file], buildPrompt(settings, 'Nâng cấp độ nét và mở rộng ảnh'));
 }
-
-export { generateProfileImage };
