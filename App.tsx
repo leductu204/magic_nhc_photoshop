@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { generateSpeech, translateText, preprocessClothImage, analyzeImageText, generateClothingSwap, fileToPart, refineClothingResult, analyzeRestorationImage } from './services/geminiService';
 import { generateStyledImage, generateProfileImage, generatePaintingImage, generateBackgroundSwapImage, generateFaceStraightenImage, generateLifestyleImage, generateMockupImage, generateLightingEffectImage, generateRemoveBackgroundImage, generateSymmetricEditImage, generateBabyUltrasoundImage, generateArchitectureRenderImage, generateBabyFromUltrasoundImage, generateUpscaleExpandImage } from './services/imageGenerationService';
+import { generateWithTramSangTao } from './services/tramSangTaoService';
 import { pcmToWavBlob, decodeAudioData, decode, stitchAudioBuffers } from './utils/audioUtils';
 import { splitTextIntoChunks } from './utils/textUtils';
 import { AVAILABLE_VOICES, HISTORY_STORAGE_KEY, MAX_HISTORY_ITEMS } from './constants';
@@ -1125,9 +1126,33 @@ const App: React.FC = () => {
   const generateSwap = async () => {
       setIsClothingProcessing(true);
       try {
-          const url = await generateClothingSwap(clothingPerson!.part!, clothingCloth!.part!, clothingBg?.description || null, clothingPose?.description || null, clothingAspectRatio, clothingCustomPrompt, clothingEnableUpscale);
-          setClothingResultUrl(url); setClothingResultPart(await fileToPart(new File([await (await fetch(url)).blob()], 'res.png', { type: 'image/png' })));
-      } catch (e) {} finally { setIsClothingProcessing(false); }
+          const images: File[] = [clothingPerson!.file, clothingCloth!.file];
+          
+          // Build prompt cho thay đồ
+          let prompt = 'Thay quần áo trong ảnh thứ 2 lên người trong ảnh thứ 1, giữ nguyên khuôn mặt, tư thế và nền.';
+          if (clothingCustomPrompt?.trim()) {
+              prompt += ` ${clothingCustomPrompt.trim()}`;
+          }
+          if (clothingBg?.description) {
+              prompt += ` Nền: ${clothingBg.description}`;
+          }
+          if (clothingPose?.description) {
+              prompt += ` Tư thế: ${clothingPose.description}`;
+          }
+
+          const settings: GenerationSettings = {
+              ...imageSettings,
+              userPrompt: prompt,
+              aspectRatio: clothingAspectRatio || '1:1',
+          };
+
+          const url = await generateWithTramSangTao(images, settings);
+          setClothingResultUrl(url);
+          setClothingResultPart(await fileToPart(new File([await (await fetch(url)).blob()], 'res.png', { type: 'image/png' })));
+      } catch (e: any) {
+          console.error('Clothing swap failed:', e);
+          alert(e?.message || 'Thay đồ thất bại. Vui lòng thử lại.');
+      } finally { setIsClothingProcessing(false); }
   };
 
   const renderHomeGrid = () => (
