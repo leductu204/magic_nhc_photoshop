@@ -375,15 +375,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </div>
 
                   <div className="space-y-4">
-                      <h3 className={`text-[16px] font-black ${settings.modelType === 'nano' ? 'text-violet-400' : 'text-sky-400'} uppercase tracking-widest`}>KÍCH THƯỚC</h3>
+                    {settings.modelType === 'pro-image' && (
+                      <>
+                      <h3 className="text-[16px] font-black text-sky-400 uppercase tracking-widest">KÍCH THƯỚC</h3>
                       <div className="grid grid-cols-3 gap-3">
                           {['1K', '2K', '4K'].map((size) => (
                               <button
                                   key={size}
                                   onClick={() => onSettingsChange({ imageSize: size as any, modelType: settings.modelType })}
-                                  className={`py-4 rounded-xl border-2 font-black text-[16px] transition-all flex items-center justify-center ${
+                                  className={`py-3 rounded-xl border-2 font-black text-[14px] transition-all flex items-center justify-center ${
                                       settings.imageSize === size 
-                                      ? `${settings.modelType === 'nano' ? 'bg-violet-500 border-violet-400' : 'bg-sky-500 border-sky-400'} text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]` 
+                                      ? 'bg-sky-500 border-sky-400 text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]' 
                                       : 'bg-zinc-900/50 border-white/5 text-gray-500 hover:border-white/20'
                                   }`}
                               >
@@ -391,6 +393,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                               </button>
                           ))}
                       </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-white/5">
