@@ -81,9 +81,17 @@ export const generateWithTramSangTao = async (
 
   const form = new FormData();
   form.append('prompt', (settings.userPrompt || 'Generate image').trim());
-  form.append('model', modelFromTier(settings.modelType));
-  form.append('resolution', normalizeResolution(settings.imageSize));
+
+  const model = modelFromTier(settings.modelType);
+  form.append('model', model);
+
+  // nano-banana không hỗ trợ resolution, chỉ nano-banana-pro mới có
+  if (model === 'nano-banana-pro') {
+    form.append('resolution', normalizeResolution(settings.imageSize));
+  }
+
   form.append('aspect_ratio', normalizeAspectRatio(settings.aspectRatio));
+  form.append('speed', 'fast');
 
   if (inputImages?.length) {
     inputImages.forEach((file) => form.append('input_image', file));
