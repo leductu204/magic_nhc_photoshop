@@ -1129,9 +1129,9 @@ const App: React.FC = () => {
           const images: File[] = [clothingPerson!.file, clothingCloth!.file];
           
           // Build prompt cho thay đồ
-          let prompt = 'Thay quần áo trong ảnh thứ 2 lên người trong ảnh thứ 1, giữ nguyên khuôn mặt, tư thế và nền.';
+          let prompt = 'Virtual try-on: Take the clothing/outfit from the SECOND reference image and dress it onto the person in the FIRST reference image. The person must wear EXACTLY the same clothing item shown in the second image - same color, pattern, style, and design. Keep the person\'s face, body shape, pose, skin tone, and hair completely unchanged. Only replace their current outfit with the clothing from reference image 2. Photorealistic result, natural lighting, seamless fit.';
           if (clothingCustomPrompt?.trim()) {
-              prompt += ` ${clothingCustomPrompt.trim()}`;
+              prompt += ` Additional requirements: ${clothingCustomPrompt.trim()}`;
           }
           if (clothingBg?.description) {
               prompt += ` Nền: ${clothingBg.description}`;
