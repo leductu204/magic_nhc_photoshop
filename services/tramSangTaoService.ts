@@ -1,6 +1,6 @@
 import { GenerationSettings } from '../types';
 
-const TRAM_BASE_URL = 'https://api.tramsangtao.com';
+const TRAM_BASE_URL = '/tst-api';
 const POLL_INTERVAL_MS = 5000;
 const POLL_TIMEOUT_MS = 180000;
 

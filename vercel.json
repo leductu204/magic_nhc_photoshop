@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/tst-api/:path*", "destination": "https://api.tramsangtao.com/:path*" }
+  ]
+}
