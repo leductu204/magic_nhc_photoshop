@@ -114,20 +114,90 @@ export const generateWithTramSangTao = async (
   const jobId = extractJobId(genPayload);
   if (!jobId) throw new Error('Không nhận được job_id từ Trạm Sáng Tạo.');
 
+  const MAX_POLL_RETRIES = 3;
+  const POLL_BACKOFF_MS = [2000, 4000, 8000];
+  const DEFAULT_RETRY_AFTER_MS = 5000;
+
+  const parseRetryAfterMs = (value: string | null): number => {
+    if (!value) return DEFAULT_RETRY_AFTER_MS;
+
+    const seconds = Number(value);
+    if (!Number.isNaN(seconds) && seconds >= 0) {
+      return Math.max(0, Math.floor(seconds * 1000));
+    }
+
+    const dateMs = Date.parse(value);
+    if (!Number.isNaN(dateMs)) {
+      return Math.max(0, dateMs - Date.now());
+    }
+
+    return DEFAULT_RETRY_AFTER_MS;
+  };
+
   const startedAt = Date.now();
   while (Date.now() - startedAt < POLL_TIMEOUT_MS) {
     await sleep(POLL_INTERVAL_MS);
 
-    const pollRes = await fetch(`${TRAM_BASE_URL}/v1/jobs/${jobId}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    });
+    let pollRes: Response | null = null;
 
-    if (!pollRes.ok) {
+    for (let retry = 0; retry <= MAX_POLL_RETRIES; retry++) {
+      try {
+        pollRes = await fetch(`${TRAM_BASE_URL}/v1/jobs/${jobId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        });
+      } catch (error: any) {
+        if (retry < MAX_POLL_RETRIES) {
+          const waitMs = POLL_BACKOFF_MS[retry] ?? POLL_BACKOFF_MS[POLL_BACKOFF_MS.length - 1];
+          console.warn(
+            `[TramSangTao] Poll job ${jobId} network error. Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`,
+            error
+          );
+          await sleep(waitMs);
+          continue;
+        }
+
+        throw new Error(error?.message || 'Lỗi mạng khi kiểm tra job.');
+      }
+
+      if (pollRes.ok) break;
+
+      const statusCode = pollRes.status;
       const text = await pollRes.text().catch(() => '');
-      throw new Error(`Lỗi kiểm tra job (${pollRes.status}): ${text}`);
+
+      if (statusCode === 429) {
+        if (retry < MAX_POLL_RETRIES) {
+          const waitMs = parseRetryAfterMs(pollRes.headers.get('retry-after'));
+          console.warn(
+            `[TramSangTao] Poll job ${jobId} bị rate limit (429). Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`
+          );
+          await sleep(waitMs);
+          continue;
+        }
+
+        throw new Error(`Lỗi kiểm tra job (${statusCode}): ${text}`);
+      }
+
+      if (statusCode >= 500) {
+        if (retry < MAX_POLL_RETRIES) {
+          const waitMs = POLL_BACKOFF_MS[retry] ?? POLL_BACKOFF_MS[POLL_BACKOFF_MS.length - 1];
+          console.warn(
+            `[TramSangTao] Poll job ${jobId} lỗi server (${statusCode}). Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`
+          );
+          await sleep(waitMs);
+          continue;
+        }
+
+        throw new Error(`Lỗi kiểm tra job (${statusCode}): ${text}`);
+      }
+
+      throw new Error(`Lỗi kiểm tra job (${statusCode}): ${text}`);
+    }
+
+    if (!pollRes || !pollRes.ok) {
+      throw new Error('Không thể kiểm tra trạng thái job.');
     }
 
     const pollPayload = await pollRes.json();
