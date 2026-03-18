@@ -2,7 +2,7 @@ import { GenerationSettings } from '../types';
 
 const TRAM_BASE_URL = '/tst-api';
 const POLL_INTERVAL_MS = 5000;
-const POLL_TIMEOUT_MS = 600000;
+const POLL_TIMEOUT_MS = 1200000;
 
 const SUCCESS_STATUSES = new Set(['completed', 'succeeded', 'success', 'done', 'finished']);
 const FAILURE_STATUSES = new Set(['failed', 'error', 'cancelled', 'canceled']);
