@@ -116,9 +116,46 @@ export const generateWithTramSangTao = async (
   form.append('server_id', 'vip1');
 
   if (inputImages?.length) {
-    // Upload image to R2 first, then send img_url
-    const uploadedUrl = await uploadImageFile(inputImages[0], apiKey);
-    form.append('img_url', uploadedUrl);
+    // Upload all images to R2 first
+    const uploadedUrls: string[] = [];
+    for (const img of inputImages) {
+      const url = await uploadImageFile(img, apiKey);
+      uploadedUrls.push(url);
+    }
+
+    // Switch to JSON body for img_url array support
+    const jsonBody: Record<string, any> = {
+      prompt: (settings.userPrompt || 'Generate image').trim(),
+      model: modelFromTier(settings.modelType),
+      aspect_ratio: normalizeAspectRatio(settings.aspectRatio),
+      speed: 'fast',
+      server_id: 'vip1',
+      img_url: uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls,
+    };
+
+    if (jsonBody.model === 'nano-banana-pro') {
+      jsonBody.resolution = normalizeResolution(settings.imageSize);
+    }
+
+    const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(jsonBody),
+    });
+
+    if (!genRes.ok) {
+      const text = await genRes.text().catch(() => '');
+      throw new Error(`Tạo ảnh thất bại (${genRes.status}): ${text}`);
+    }
+
+    const genPayload = await genRes.json();
+    const jobId = extractJobId(genPayload);
+    if (!jobId) throw new Error('Không nhận được job_id từ Trạm Sáng Tạo.');
+
+    return pollAndReturn(jobId, apiKey);
   }
 
   const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
@@ -138,23 +175,20 @@ export const generateWithTramSangTao = async (
   const jobId = extractJobId(genPayload);
   if (!jobId) throw new Error('Không nhận được job_id từ Trạm Sáng Tạo.');
 
+  return pollAndReturn(jobId, apiKey);
+};
+
+const pollAndReturn = async (jobId: string, apiKey: string): Promise<string> => {
   const MAX_POLL_RETRIES = 3;
   const POLL_BACKOFF_MS = [2000, 4000, 8000];
   const DEFAULT_RETRY_AFTER_MS = 5000;
 
   const parseRetryAfterMs = (value: string | null): number => {
     if (!value) return DEFAULT_RETRY_AFTER_MS;
-
     const seconds = Number(value);
-    if (!Number.isNaN(seconds) && seconds >= 0) {
-      return Math.max(0, Math.floor(seconds * 1000));
-    }
-
+    if (!Number.isNaN(seconds) && seconds >= 0) return Math.max(0, Math.floor(seconds * 1000));
     const dateMs = Date.parse(value);
-    if (!Number.isNaN(dateMs)) {
-      return Math.max(0, dateMs - Date.now());
-    }
-
+    if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
     return DEFAULT_RETRY_AFTER_MS;
   };
 
@@ -168,21 +202,15 @@ export const generateWithTramSangTao = async (
       try {
         pollRes = await fetch(`${TRAM_BASE_URL}/v1/jobs/${jobId}`, {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
+          headers: { Authorization: `Bearer ${apiKey}` },
         });
       } catch (error: any) {
         if (retry < MAX_POLL_RETRIES) {
           const waitMs = POLL_BACKOFF_MS[retry] ?? POLL_BACKOFF_MS[POLL_BACKOFF_MS.length - 1];
-          console.warn(
-            `[TramSangTao] Poll job ${jobId} network error. Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`,
-            error
-          );
+          console.warn(`[TramSangTao] Poll job ${jobId} network error. Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`, error);
           await sleep(waitMs);
           continue;
         }
-
         throw new Error(error?.message || 'Lỗi mạng khi kiểm tra job.');
       }
 
@@ -194,35 +222,27 @@ export const generateWithTramSangTao = async (
       if (statusCode === 429) {
         if (retry < MAX_POLL_RETRIES) {
           const waitMs = parseRetryAfterMs(pollRes.headers.get('retry-after'));
-          console.warn(
-            `[TramSangTao] Poll job ${jobId} bị rate limit (429). Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`
-          );
+          console.warn(`[TramSangTao] Poll job ${jobId} bị rate limit (429). Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`);
           await sleep(waitMs);
           continue;
         }
-
         throw new Error(`Lỗi kiểm tra job (${statusCode}): ${text}`);
       }
 
       if (statusCode >= 500) {
         if (retry < MAX_POLL_RETRIES) {
           const waitMs = POLL_BACKOFF_MS[retry] ?? POLL_BACKOFF_MS[POLL_BACKOFF_MS.length - 1];
-          console.warn(
-            `[TramSangTao] Poll job ${jobId} lỗi server (${statusCode}). Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`
-          );
+          console.warn(`[TramSangTao] Poll job ${jobId} lỗi server (${statusCode}). Retry ${retry + 1}/${MAX_POLL_RETRIES} sau ${waitMs}ms.`);
           await sleep(waitMs);
           continue;
         }
-
         throw new Error(`Lỗi kiểm tra job (${statusCode}): ${text}`);
       }
 
       throw new Error(`Lỗi kiểm tra job (${statusCode}): ${text}`);
     }
 
-    if (!pollRes || !pollRes.ok) {
-      throw new Error('Không thể kiểm tra trạng thái job.');
-    }
+    if (!pollRes || !pollRes.ok) throw new Error('Không thể kiểm tra trạng thái job.');
 
     const pollPayload = await pollRes.json();
     const status = extractStatus(pollPayload);
@@ -230,7 +250,7 @@ export const generateWithTramSangTao = async (
     if (SUCCESS_STATUSES.has(status)) {
       const resultUrl = extractResultUrl(pollPayload);
       if (!resultUrl) throw new Error('Job hoàn tất nhưng thiếu URL ảnh kết quả.');
-      return toDataUrl(resultUrl);
+      return resultUrl;
     }
 
     if (FAILURE_STATUSES.has(status)) {
