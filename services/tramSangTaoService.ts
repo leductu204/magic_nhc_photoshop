@@ -117,48 +117,7 @@ export const generateWithTramSangTao = async (
   form.append('server_id', 'vip1');
 
   if (inputImages?.length) {
-    if (inputImages.length === 1) {
-      // Single image: send directly in FormData (faster, no extra upload)
-      form.append('input_image', inputImages[0]);
-    } else {
-      // Multiple images: upload to R2 first, then send img_url array as JSON
-      const uploadedUrls = await Promise.all(
-        inputImages.map(img => uploadImageFile(img, apiKey))
-      );
-
-      const jsonBody: Record<string, any> = {
-        prompt: (settings.userPrompt || 'Generate image').trim(),
-        model: modelFromTier(settings.modelType),
-        aspect_ratio: normalizeAspectRatio(settings.aspectRatio),
-        speed: 'fast',
-        server_id: 'vip1',
-        img_url: uploadedUrls,
-      };
-
-      if (jsonBody.model === 'nano-banana-pro') {
-        jsonBody.resolution = normalizeResolution(settings.imageSize);
-      }
-
-      const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jsonBody),
-      });
-
-      if (!genRes.ok) {
-        const text = await genRes.text().catch(() => '');
-        throw new Error(`Tạo ảnh thất bại (${genRes.status}): ${text}`);
-      }
-
-      const genPayload = await genRes.json();
-      const jobId = extractJobId(genPayload);
-      if (!jobId) throw new Error('Không nhận được job_id từ Trạm Sáng Tạo.');
-
-      return pollAndReturn(jobId, apiKey);
-    }
+    inputImages.forEach((file) => form.append('input_image', file));
   }
 
   const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
