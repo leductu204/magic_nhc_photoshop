@@ -1,6 +1,7 @@
 import { GenerationSettings } from '../types';
 
 const TRAM_BASE_URL = '/tst-api';
+const TRAM_DIRECT_URL = 'https://api.tramsangtao.com';
 const POLL_INTERVAL_MS = 5000;
 const POLL_TIMEOUT_MS = 1200000;
 
@@ -46,7 +47,7 @@ const uploadImageFile = async (file: File, apiKey: string): Promise<string> => {
   const form = new FormData();
   form.append('file', file);
 
-  const res = await fetch(`${TRAM_BASE_URL}/v1/files/upload/image`, {
+  const res = await fetch(`${TRAM_DIRECT_URL}/v1/files/upload/image`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}` },
     body: form,
@@ -116,46 +117,48 @@ export const generateWithTramSangTao = async (
   form.append('server_id', 'vip1');
 
   if (inputImages?.length) {
-    // Upload all images to R2 first
-    const uploadedUrls: string[] = [];
-    for (const img of inputImages) {
-      const url = await uploadImageFile(img, apiKey);
-      uploadedUrls.push(url);
+    if (inputImages.length === 1) {
+      // Single image: send directly in FormData (faster, no extra upload)
+      form.append('input_image', inputImages[0]);
+    } else {
+      // Multiple images: upload to R2 first, then send img_url array as JSON
+      const uploadedUrls = await Promise.all(
+        inputImages.map(img => uploadImageFile(img, apiKey))
+      );
+
+      const jsonBody: Record<string, any> = {
+        prompt: (settings.userPrompt || 'Generate image').trim(),
+        model: modelFromTier(settings.modelType),
+        aspect_ratio: normalizeAspectRatio(settings.aspectRatio),
+        speed: 'fast',
+        server_id: 'vip1',
+        img_url: uploadedUrls,
+      };
+
+      if (jsonBody.model === 'nano-banana-pro') {
+        jsonBody.resolution = normalizeResolution(settings.imageSize);
+      }
+
+      const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jsonBody),
+      });
+
+      if (!genRes.ok) {
+        const text = await genRes.text().catch(() => '');
+        throw new Error(`Tạo ảnh thất bại (${genRes.status}): ${text}`);
+      }
+
+      const genPayload = await genRes.json();
+      const jobId = extractJobId(genPayload);
+      if (!jobId) throw new Error('Không nhận được job_id từ Trạm Sáng Tạo.');
+
+      return pollAndReturn(jobId, apiKey);
     }
-
-    // Switch to JSON body for img_url array support
-    const jsonBody: Record<string, any> = {
-      prompt: (settings.userPrompt || 'Generate image').trim(),
-      model: modelFromTier(settings.modelType),
-      aspect_ratio: normalizeAspectRatio(settings.aspectRatio),
-      speed: 'fast',
-      server_id: 'vip1',
-      img_url: uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls,
-    };
-
-    if (jsonBody.model === 'nano-banana-pro') {
-      jsonBody.resolution = normalizeResolution(settings.imageSize);
-    }
-
-    const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(jsonBody),
-    });
-
-    if (!genRes.ok) {
-      const text = await genRes.text().catch(() => '');
-      throw new Error(`Tạo ảnh thất bại (${genRes.status}): ${text}`);
-    }
-
-    const genPayload = await genRes.json();
-    const jobId = extractJobId(genPayload);
-    if (!jobId) throw new Error('Không nhận được job_id từ Trạm Sáng Tạo.');
-
-    return pollAndReturn(jobId, apiKey);
   }
 
   const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
