@@ -42,6 +42,27 @@ const extractJobId = (data: any): string | null =>
 
 const extractStatus = (data: any): string => String(data?.status || data?.data?.status || '').toLowerCase();
 
+const uploadImageFile = async (file: File, apiKey: string): Promise<string> => {
+  const form = new FormData();
+  form.append('file', file);
+
+  const res = await fetch(`${TRAM_BASE_URL}/v1/files/upload/image`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Upload ảnh thất bại (${res.status}): ${text}`);
+  }
+
+  const payload = await res.json();
+  const url = payload?.url || payload?.data?.url;
+  if (!url) throw new Error('Upload thành công nhưng không nhận được URL.');
+  return url;
+};
+
 const extractResultUrl = (data: any): string | null => {
   const candidates = [
     data?.result,
@@ -92,9 +113,12 @@ export const generateWithTramSangTao = async (
 
   form.append('aspect_ratio', normalizeAspectRatio(settings.aspectRatio));
   form.append('speed', 'fast');
+  form.append('server_id', 'vip1');
 
   if (inputImages?.length) {
-    inputImages.forEach((file) => form.append('input_image', file));
+    // Upload image to R2 first, then send img_url
+    const uploadedUrl = await uploadImageFile(inputImages[0], apiKey);
+    form.append('img_url', uploadedUrl);
   }
 
   const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
