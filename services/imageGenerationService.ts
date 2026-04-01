@@ -45,7 +45,7 @@ export async function generateProfileImage(file: File, settings: ProfileSettings
     modelType: (settings as any).modelType || 'pro-image',
     userPrompt: prompt,
     customApiKey: (settings as any).customApiKey || '',
-    imageSize: '2K',
+    imageSize: (settings as any).imageSize || '2K',
     aspectRatio: '1:1',
   };
 
