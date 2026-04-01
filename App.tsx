@@ -733,7 +733,7 @@ const App: React.FC = () => {
       
       try {
         let url = '';
-        if (viewMode === 'profile') url = await generateProfileImage(file, { ...profileSettings, customApiKey: imageSettings.customApiKey } as any);
+        if (viewMode === 'profile') url = await generateProfileImage(file, { ...profileSettings, customApiKey: imageSettings.customApiKey, modelType: imageSettings.modelType, imageSize: imageSettings.imageSize } as any);
         else if (viewMode === 'painting') url = await generatePaintingImage(file, { ...paintingSettings, isPortraitFocus: isPortrait });
         else if (viewMode === 'background-swap') url = await generateBackgroundSwapImage(file, backgroundSwapSettings);
         else if (viewMode === 'face-straighten') url = await generateFaceStraightenImage(file, faceStraightenSettings);
@@ -826,7 +826,7 @@ const App: React.FC = () => {
                 setRestorationImages(prev => prev.map(img => img.id === newId ? { ...img, status: 'completed', generatedImageUrl: url } : img));
             } else if (viewMode === 'profile') {
                 setProfileImages([newImageObj]);
-                const url = await generateProfileImage(file, { ...profileSettings, customApiKey: imageSettings.customApiKey } as any);
+                const url = await generateProfileImage(file, { ...profileSettings, customApiKey: imageSettings.customApiKey, modelType: imageSettings.modelType, imageSize: imageSettings.imageSize } as any);
                 setProfileImages(prev => prev.map(img => img.id === newId ? { ...img, status: 'completed', generatedImageUrl: url } : img));
             } else if (viewMode === 'face-straighten') {
                 setFaceStraightenImages(prev => [...prev.map(p => ({ ...p, isSelected: false })), newImageObj]);
