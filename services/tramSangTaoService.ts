@@ -1,7 +1,6 @@
 import { GenerationSettings } from '../types';
 
 const TRAM_BASE_URL = '/tst-api';
-const TRAM_DIRECT_URL = 'https://api.tramsangtao.com';
 const POLL_INTERVAL_MS = 5000;
 const POLL_TIMEOUT_MS = 1200000;
 
@@ -43,25 +42,85 @@ const extractJobId = (data: any): string | null =>
 
 const extractStatus = (data: any): string => String(data?.status || data?.data?.status || '').toLowerCase();
 
-const uploadImageFile = async (file: File, apiKey: string): Promise<string> => {
-  const form = new FormData();
-  form.append('file', file);
-
-  const res = await fetch(`${TRAM_DIRECT_URL}/v1/files/upload/image`, {
+const requestPresignedUpload = async (file: File, apiKey: string): Promise<{ uploadUrl: string; uploadId: string }> => {
+  const res = await fetch(`${TRAM_BASE_URL}/v1/files/upload/presign`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ filename: file.name, type: 'image' }),
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`Upload ảnh thất bại (${res.status}): ${text}`);
+    throw new Error(`Lấy presigned URL thất bại (${res.status}): ${text}`);
+  }
+
+  const payload = await res.json();
+  const uploadUrl = payload?.upload_url || payload?.uploadUrl || payload?.data?.upload_url || payload?.data?.uploadUrl;
+  const uploadId = payload?.upload_id || payload?.uploadId || payload?.data?.upload_id || payload?.data?.uploadId;
+
+  if (!uploadUrl || !uploadId) {
+    throw new Error('Presign thành công nhưng thiếu upload_url hoặc upload_id.');
+  }
+
+  return { uploadUrl: String(uploadUrl), uploadId: String(uploadId) };
+};
+
+const uploadFileToPresignedUrl = async (file: File, uploadUrl: string): Promise<void> => {
+  const putRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
+    },
+    body: file,
+  });
+
+  if (!putRes.ok) {
+    const text = await putRes.text().catch(() => '');
+    throw new Error(`Upload file lên CDN thất bại (${putRes.status}): ${text}`);
+  }
+};
+
+const confirmPresignedUpload = async (uploadId: string, apiKey: string): Promise<string> => {
+  const res = await fetch(`${TRAM_BASE_URL}/v1/files/upload/confirm`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ upload_id: uploadId }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Confirm upload thất bại (${res.status}): ${text}`);
   }
 
   const payload = await res.json();
   const url = payload?.url || payload?.data?.url;
-  if (!url) throw new Error('Upload thành công nhưng không nhận được URL.');
-  return url;
+  if (!url) throw new Error('Confirm upload thành công nhưng không nhận được URL file.');
+
+  return String(url);
+};
+
+const uploadImageFile = async (file: File, apiKey: string): Promise<string> => {
+  const { uploadUrl, uploadId } = await requestPresignedUpload(file, apiKey);
+  await uploadFileToPresignedUrl(file, uploadUrl);
+  return confirmPresignedUpload(uploadId, apiKey);
+};
+
+const uploadInputImages = async (inputImages: File[] | undefined, apiKey: string): Promise<string[]> => {
+  if (!inputImages?.length) return [];
+
+  const uploadedUrls: string[] = [];
+  for (const file of inputImages) {
+    const url = await uploadImageFile(file, apiKey);
+    uploadedUrls.push(url);
+  }
+
+  return uploadedUrls;
 };
 
 const extractResultUrl = (data: any): string | null => {
@@ -116,9 +175,10 @@ export const generateWithTramSangTao = async (
   form.append('speed', 'fast');
   form.append('server_id', 'vip1');
 
-  if (inputImages?.length) {
-    inputImages.forEach((file) => form.append('input_image', file));
-  }
+  // Flow mới: upload ảnh trước qua endpoint files/upload/presign + confirm,
+  // sau đó truyền URL qua img_url thay vì ném file trực tiếp vào input_image.
+  const uploadedImageUrls = await uploadInputImages(inputImages, apiKey);
+  uploadedImageUrls.forEach((url) => form.append('img_url', url));
 
   const genRes = await fetch(`${TRAM_BASE_URL}/v1/image/generate`, {
     method: 'POST',
