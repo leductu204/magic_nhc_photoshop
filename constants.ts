@@ -21,3 +21,25 @@ export const AVAILABLE_VOICES: VoiceOption[] = [
 
 export const HISTORY_STORAGE_KEY = 'tts-generation-history';
 export const MAX_HISTORY_ITEMS = 10;
+
+export const ATTIRE_GROUPS = [
+  {
+    title: 'CƠ BẢN / NAM',
+    options: ['GIỮ NGUYÊN', 'SƠ MI', 'SƠ MI TRẮNG', 'POLO', 'PHÔNG TRƠN', 'ÁO THUN', 'ÁO KHOÁC', 'VEST', 'SUIT NAM', 'ÁO COMLE', 'TÙY CHỈNH']
+  },
+  {
+    title: 'NỮ / TRUYỀN THỐNG',
+    options: ['VÁY CÔNG SỞ', 'VEST NỮ 1', 'VEST NỮ 2', 'ÁO BẦU NỮ', 'ÁO DÀI TRẮNG', 'ÁO DÀI NAM', 'ÁO BÀ BA']
+  },
+  {
+    title: 'HỌC ĐƯỜNG',
+    options: ['KHĂN QUÀNG ĐỎ', 'NỮ SINH HQ 1', 'NỮ SINH HQ 2', 'NỮ SINH HQ 3']
+  }
+];
+
+export const HAIRSTYLE_GROUPS = [
+  { title: 'CƠ BẢN', options: ['GIỮ NGUYÊN', 'GỌN GÀNG', 'THỜI TRANG'] },
+  { title: 'KIỂU NỮ', options: ['TÓC NGẮN', 'TÓC DÀI', 'BÚI BỒNG BỀNH', 'BUỘC GỌN'] },
+  { title: 'KIỂU NAM', options: ['TEXTURE CROP', 'SIDE PART HQ', 'XOĂN NGẮN', 'HẠT DẺ NGÕ'] },
+  { title: 'MÀU TÓC', options: ['ĐEN', 'NÂU', 'VÀNG', 'BẠCH KIM'] }
+];

@@ -10,7 +10,21 @@ interface TranslatorPanelProps {
   isLoading: boolean;
   error: ErrorDetails | null;
   onTranslate: () => void;
+  targetLanguage: string;
+  onLanguageChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
 }
+
+const LANGUAGES = [
+  { code: 'Vietnamese', name: 'Tiếng Việt' },
+  { code: 'English', name: 'Tiếng Anh' },
+  { code: 'Chinese', name: 'Tiếng Trung' },
+  { code: 'Japanese', name: 'Tiếng Nhật' },
+  { code: 'Korean', name: 'Tiếng Hàn' },
+  { code: 'French', name: 'Tiếng Pháp' },
+  { code: 'German', name: 'Tiếng Đức' },
+  { code: 'Russian', name: 'Tiếng Nga' },
+  { code: 'Spanish', name: 'Tiếng Tây Ban Nha' },
+];
 
 const TranslatorPanel: React.FC<TranslatorPanelProps> = ({
   inputText,
@@ -19,6 +33,8 @@ const TranslatorPanel: React.FC<TranslatorPanelProps> = ({
   isLoading,
   error,
   onTranslate,
+  targetLanguage,
+  onLanguageChange,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -35,6 +51,22 @@ const TranslatorPanel: React.FC<TranslatorPanelProps> = ({
       <p className="text-gray-400 mb-6 text-sm">Dịch thuật văn bản không giới hạn, nhanh chóng và chính xác.</p>
       
       <div className="flex-grow flex flex-col space-y-4">
+        <div className="flex flex-col space-y-2">
+          <label className="text-sm font-medium text-gray-400">Ngôn ngữ đích</label>
+          <select
+            value={targetLanguage}
+            onChange={onLanguageChange}
+            disabled={isLoading}
+            className="w-full bg-zinc-800 border-2 border-zinc-700 rounded-lg p-3 text-gray-200 outline-none focus:border-red-600 transition-all"
+          >
+            {LANGUAGES.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <textarea
           rows={8}
           className="w-full bg-zinc-800 border-2 border-zinc-700 rounded-lg p-4 text-gray-200 placeholder-gray-500 transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed outline-none glowing-textarea"
@@ -58,7 +90,7 @@ const TranslatorPanel: React.FC<TranslatorPanelProps> = ({
               Đang dịch...
             </>
           ) : (
-            'Dịch sang Tiếng Việt'
+            `Dịch sang ${LANGUAGES.find(l => l.code === targetLanguage)?.name || 'Tiếng Việt'}`
           )}
         </button>
 

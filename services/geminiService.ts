@@ -963,13 +963,13 @@ export const generateSpeech = async (text: string, voiceId: string): Promise<str
   } catch (error) { throw error; }
 };
 
-export const translateText = async (text: string): Promise<string> => {
+export const translateText = async (text: string, targetLanguage: string = 'Vietnamese'): Promise<string> => {
   if (!text.trim()) return '';
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Translate to Vietnamese: ${text}`,
+      contents: `Translate to ${targetLanguage}: ${text}`,
     });
     return response.text || "";
   } catch (error) { throw error; }

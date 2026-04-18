@@ -457,6 +457,7 @@ const App: React.FC = () => {
   const [voiceError, setVoiceError] = useState<ErrorDetails | null>(null);
   const [translatorInput, setTranslatorInput] = useState<string>('');
   const [translatorOutput, setTranslatorOutput] = useState<string>('');
+  const [targetLanguage, setTargetLanguage] = useState<string>('Vietnamese');
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [translatorError, setTranslatorError] = useState<ErrorDetails | null>(null);
 
@@ -1398,11 +1399,13 @@ const App: React.FC = () => {
         outputText={translatorOutput} 
         isLoading={isTranslating} 
         error={translatorError} 
+        targetLanguage={targetLanguage}
+        onLanguageChange={(e) => setTargetLanguage(e.target.value)}
         onTranslate={async () => {
           setIsTranslating(true);
           setTranslatorError(null);
           try {
-            const res = await translateText(translatorInput);
+            const res = await translateText(translatorInput, targetLanguage);
             setTranslatorOutput(res);
           } catch (e: any) {
             setTranslatorError({ title: 'Lỗi dịch', message: e.message, suggestions: [] });

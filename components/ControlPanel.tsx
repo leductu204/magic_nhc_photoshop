@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { GenerationSettings, WeatherOption, StoredImage, ViewMode, ProfileSettings, ModelType, ShotType } from '../types';
 import { MicrophoneIcon, XCircleIcon, ChevronDownIcon, ChevronUpIcon, PhotoIcon, ArrowPathIcon, SparklesIcon, TrashIcon, CheckIcon, BoltIcon, ChatBubbleBottomCenterTextIcon, ArchiveBoxIcon, ArrowDownTrayIcon, DocumentMagnifyingGlassIcon, EyeIcon, PlusIcon, PaintBrushIcon, ClockIcon, SpeakerWaveIcon, UserCircleIcon, AdjustmentsHorizontalIcon, ShoppingBagIcon, SwatchIcon, RocketLaunchIcon, KeyIcon, CreditCardIcon, MagnifyingGlassCircleIcon, ClipboardDocumentListIcon, IdentificationIcon, ListBulletIcon, AcademicCapIcon, FaceSmileIcon, BeakerIcon, ShieldCheckIcon, FireIcon, HeartIcon, WrenchScrewdriverIcon, VariableIcon, ScissorsIcon, SunIcon, LifebuoyIcon, FingerPrintIcon, UserIcon, MapPinIcon, PresentationChartBarIcon, ShoppingCartIcon, BuildingOffice2Icon, RectangleGroupIcon, TagIcon, ScaleIcon, HomeModernIcon, PencilIcon, BeakerIcon as LabIcon, ComputerDesktopIcon, CloudArrowDownIcon, ArrowTopRightOnSquareIcon, ExclamationTriangleIcon, SquaresPlusIcon } from '@heroicons/react/24/outline';
 import { analyzeReferenceImage } from '../services/geminiService';
+import { ATTIRE_GROUPS, HAIRSTYLE_GROUPS } from '../constants';
 
 interface ControlPanelProps {
   settings: GenerationSettings;
@@ -154,28 +155,6 @@ const QUICK_RESTORATION_TEMPLATES = [
         icon: SwatchIcon, 
         prompt: `Phục hồi bức tranh này. Tái tạo lại các chi tiết bị mất, phai màu hoặc hư hỏng. Tăng cường màu sắc, độ tương phản và làm rõ các đường nét để bức tranh trở nên sống động và chi tiết như ban đầu.` 
     }
-];
-
-const ATTIRE_GROUPS = [
-    {
-        title: 'CƠ BẢN / NAM',
-        options: ['GIỮ NGUYÊN', 'SƠ MI', 'SƠ MI TRẮNG', 'POLO', 'PHÔNG TRƠN', 'ÁO THUN', 'ÁO KHOÁC', 'VEST', 'SUIT NAM', 'TÙY CHỈNH']
-    },
-    {
-        title: 'NỮ / TRUYỀN THỐNG',
-        options: ['VÁY CÔNG SỞ', 'VEST NỮ 1', 'VEST NỮ 2', 'ÁO BẦU NỮ', 'ÁO DÀI TRẮNG', 'ÁO DÀI NAM', 'ÁO BÀ BA']
-    },
-    {
-        title: 'HỌC ĐƯỜNG',
-        options: ['KHĂN QUÀNG ĐỎ', 'NỮ SINH HQ 1', 'NỮ SINH HQ 2', 'NỮ SINH HQ 3']
-    }
-];
-
-const HAIRSTYLE_GROUPS = [
-    { title: 'CƠ BẢN', options: ['GIỮ NGUYÊN', 'GỌN GÀNG', 'THỜI TRANG'] },
-    { title: 'KIỂU NỮ', options: ['TÓC NGẮN', 'TÓC DÀ', 'BÚI BỒNG BỀNH', 'BUỘC GỌN'] },
-    { title: 'KIỂU NAM', options: ['TEXTURE CROP', 'SIDE PART HQ', 'XOĂN NGẮN', 'HẠT DẺ NGÕ'] },
-    { title: 'MÀU TÓC', options: ['ĐEN', 'NÂU', 'VÀNG', 'BẠCH KIM'] }
 ];
 
 const LIFESTYLE_THEMES = [
