@@ -379,9 +379,19 @@ const App: React.FC = () => {
       customPrompt: '',
       customAttireImage: null,
       customAttirePreview: null,
-      enableUpscale: false
+      enableUpscale: false,
+      batchCount: 1,
+      modelType: 'flash'
   });
   const [printLayout, setPrintLayout] = useState<PrintLayoutType>('4x6');
+  const [printPaperSize, setPrintPaperSize] = useState<string>('10x15 cm');
+  const [printSpacing, setPrintSpacing] = useState<number>(2);
+  const [printBorderColor, setPrintBorderColor] = useState<string>('#CCCCCC');
+  const [customPrintWidth, setCustomPrintWidth] = useState<string>('');
+  const [customPrintHeight, setCustomPrintHeight] = useState<string>('');
+  const [customCount2x3, setCustomCount2x3] = useState<number>(0);
+  const [customCount3x4, setCustomCount3x4] = useState<number>(0);
+  const [customCount4x6, setCustomCount4x6] = useState<number>(0);
 
   const [faceStraightenImages, setFaceStraightenImages] = useState<ProcessedImage[]>([]);
   const [faceStraightenSettings, setFaceStraightenSettings] = useState<GenerationSettings>({ ...DEFAULT_GENERATION_SETTINGS, straightenIntensity: 1.0 });
@@ -715,17 +725,33 @@ const App: React.FC = () => {
   const handleImageUpload = (fileList: FileList | File[]) => {
       const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
       if (files.length === 0) return;
-      const isSingleMode = viewMode === 'profile' || viewMode === 'face-straighten' || viewMode === 'lifestyle' || viewMode === 'mockup' || viewMode === 'lighting-effects' || viewMode === 'remove-background' || viewMode === 'symmetric-edit' || viewMode === 'baby-ultrasound' || viewMode === 'architecture-render' || viewMode === 'upscale-expand';
+      const isSingleMode = viewMode === 'face-straighten' || viewMode === 'lifestyle' || viewMode === 'mockup' || viewMode === 'lighting-effects' || viewMode === 'remove-background' || viewMode === 'symmetric-edit' || viewMode === 'baby-ultrasound' || viewMode === 'architecture-render' || viewMode === 'upscale-expand';
       const defaultSelected = (viewMode === 'profile' || viewMode === 'restoration' || viewMode === 'face-straighten' || viewMode === 'lifestyle' || viewMode === 'mockup' || viewMode === 'lighting-effects' || viewMode === 'remove-background' || viewMode === 'symmetric-edit' || viewMode === 'baby-ultrasound' || viewMode === 'architecture-render' || viewMode === 'upscale-expand') ? true : false;
-      const newImgs: ProcessedImage[] = files.map(file => ({
-          id: crypto.randomUUID(),
-          originalPreviewUrl: URL.createObjectURL(file),
-          file: file,
-          status: 'idle',
-          isSelected: defaultSelected
-      }));
-      if (isSingleMode) setImages([newImgs[0]]); 
-      else setImages(prev => [...prev, ...newImgs]); 
+
+      let newImgs: ProcessedImage[] = [];
+      if (viewMode === 'profile' && files.length === 1 && (profileSettings.batchCount || 1) > 1) {
+          const baseFile = files[0];
+          for (let i = 0; i < (profileSettings.batchCount || 1); i++) {
+              newImgs.push({
+                  id: crypto.randomUUID(),
+                  originalPreviewUrl: URL.createObjectURL(baseFile),
+                  file: baseFile,
+                  status: 'idle',
+                  isSelected: defaultSelected
+              });
+          }
+      } else {
+          newImgs = files.map(file => ({
+              id: crypto.randomUUID(),
+              originalPreviewUrl: URL.createObjectURL(file),
+              file: file,
+              status: 'idle',
+              isSelected: defaultSelected
+          }));
+      }
+
+      if (isSingleMode) setImages([newImgs[0]]);
+      else setImages(prev => [...prev, ...newImgs]);
   };
 
   const generateSingleImage = async (file: File, id: string, isPortrait: boolean) => {
@@ -1417,6 +1443,7 @@ const App: React.FC = () => {
 
   const renderProfileUI = () => {
     const sourceImage = profileImages[0];
+    const firstGeneratedUrl = profileImages.find(img => img.generatedImageUrl)?.generatedImageUrl;
     const printItems = {
         '4x6': [1,2,3,4],
         '3x4': [1,2,3,4,5,6,7,8],
@@ -1424,31 +1451,92 @@ const App: React.FC = () => {
         'mixed': [1,2,3,4]
     };
 
+    const handleGenerateAll = () => {
+        const selectedImages = profileImages.filter(img => img.isSelected);
+        if (selectedImages.length === 0) {
+            alert("Vui lòng chọn ít nhất một ảnh để tạo.");
+            return;
+        }
+        selectedImages.forEach(img => {
+            if (img.status === 'idle' || img.status === 'error') {
+                handleRegenerateImage(img);
+            }
+        });
+    };
+
     return (
         <div className="flex flex-col h-full gap-8 max-w-full mx-auto px-4 pb-20">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[600px]">
                 
-                {/* Panel 1: ẢNH GỐC */}
+                {/* Panel 1: DANH SÁCH ẢNH GỐC */}
                 <div className="flex flex-col border border-zinc-800 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-2xl relative group">
                     <div className="absolute top-4 left-4 z-20 pointer-events-none">
-                        <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded shadow-md uppercase tracking-widest border border-white/10">ẢNH GỐC</span>
+                        <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded shadow-md uppercase tracking-widest border border-white/10">ẢNH GỐC {profileImages.length > 0 ? `(${profileImages.length})` : ''}</span>
                     </div>
-                    {sourceImage && (
+                    {profileImages.length > 0 && (
                         <button onClick={() => setProfileImages([])} className="absolute top-4 right-4 z-20 bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg shadow-lg transition-all"><XMarkIcon className="w-5 h-5" /></button>
                     )}
-                    <div className="flex-1 relative flex items-center justify-center bg-black min-h-[450px]">
-                        {sourceImage ? (
-                            <img src={sourceImage.originalPreviewUrl} className="max-w-full max-h-full object-contain cursor-zoom-in" onClick={() => openLightbox(sourceImage)} />
+                    <div className="flex-1 relative bg-black min-h-[450px] overflow-y-auto p-4">
+                        {profileImages.length > 0 ? (
+                            <div className={`grid gap-4 ${profileImages.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                {profileImages.map(img => (
+                                    <div key={img.id} className={`relative aspect-[3/4] bg-zinc-900 rounded-lg overflow-hidden border transition-all group/item ${img.isSelected ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-white/5'}`}>
+                                        <img src={img.originalPreviewUrl} className="w-full h-full object-cover" />
+                                        
+                                        {/* Overlay Controls */}
+                                        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity z-10">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); openCropper(img); }} 
+                                                className="p-1.5 bg-black/60 backdrop-blur-md text-white rounded-md hover:bg-sky-600 transition-colors"
+                                                title="Cắt & Xoay"
+                                            >
+                                                <ScissorsIcon className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setProfileImages(prev => prev.filter(i => i.id !== img.id)); }} 
+                                                className="p-1.5 bg-black/60 backdrop-blur-md text-white rounded-md hover:bg-red-600 transition-colors"
+                                                title="Xóa"
+                                            >
+                                                <XMarkIcon className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+
+                                        {/* Selection Toggle */}
+                                        <button 
+                                            onClick={() => setProfileImages(prev => prev.map(p => p.id === img.id ? { ...p, isSelected: !p.isSelected } : p))}
+                                            className={`absolute top-1 left-1 w-6 h-6 rounded-md border flex items-center justify-center transition-all z-10 ${img.isSelected ? 'bg-sky-600 border-sky-400' : 'bg-black/40 border-white/20 opacity-0 group-hover/item:opacity-100'}`}
+                                        >
+                                            {img.isSelected && <CheckIcon className="w-4 h-4 text-white stroke-[3px]" />}
+                                        </button>
+
+                                        {img.status === 'generating' && (
+                                            <div className="absolute inset-0 bg-sky-500/20 flex items-center justify-center z-20 backdrop-blur-[2px]">
+                                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Status Badge */}
+                                        {img.status === 'completed' && (
+                                            <div className="absolute bottom-1 right-1 bg-emerald-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded uppercase tracking-widest">Sẵn sàng</div>
+                                        )}
+                                    </div>
+                                ))}
+                                <label className="relative aspect-[3/4] border-2 border-dashed border-zinc-800 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-all">
+                                    <PlusIcon className="w-6 h-6 text-zinc-600" />
+                                    <input type="file" multiple onChange={e => e.target.files && handleImageUpload(e.target.files)} className="hidden" accept="image/*" />
+                                </label>
+                            </div>
                         ) : (
                             <label className="flex flex-col items-center justify-center cursor-pointer p-10 hover:bg-sky-950/10 transition-all w-full h-full">
                                 <PlusIcon className="w-16 h-16 text-sky-500 mb-6" />
-                                <span className="text-white text-2xl font-black uppercase tracking-tighter">Tải Ảnh Chân Dung</span>
-                                <input type="file" onChange={e => e.target.files && handleImageUpload(e.target.files)} className="hidden" accept="image/*" />
+                                <span className="text-white text-2xl font-black uppercase tracking-tighter text-center">Tải Ảnh Chân Dung</span>
+                                <span className="text-zinc-500 text-xs font-bold uppercase mt-2">Hỗ trợ chọn nhiều ảnh cùng lúc</span>
+                                <input type="file" multiple onChange={e => e.target.files && handleImageUpload(e.target.files)} className="hidden" accept="image/*" />
                             </label>
                         )}
                     </div>
                     <div className="p-3 bg-[#111] border-t border-zinc-800 flex gap-3">
-                        <button onClick={() => sourceImage && openCropper(sourceImage)} disabled={!sourceImage} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-gray-200 rounded-lg font-bold text-xs uppercase flex items-center justify-center gap-2 border border-zinc-700 disabled:opacity-30"><ScissorsIcon className="w-4 h-4" /> Cắt & Xoay 3x4</button>
+                        <button onClick={() => sourceImage && openCropper(sourceImage)} disabled={!sourceImage} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-gray-200 rounded-lg font-bold text-xs uppercase flex items-center justify-center gap-2 border border-zinc-700 disabled:opacity-30"><ScissorsIcon className="w-4 h-4" /> Cắt & Xoay</button>
                         <button onClick={() => sourceImage && openDrawing(sourceImage)} disabled={!sourceImage} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-gray-200 rounded-lg font-bold text-xs uppercase flex items-center justify-center gap-2 border border-zinc-700 disabled:opacity-30"><PencilIcon className="w-4 h-4" /> Vẽ lên ảnh</button>
                     </div>
                 </div>
@@ -1456,23 +1544,57 @@ const App: React.FC = () => {
                 {/* Panel 2: KẾT QUẢ AI */}
                 <div className="flex flex-col border border-sky-900/30 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-2xl relative">
                     <div className="absolute top-4 left-4 z-20"><div className="w-8 h-8 rounded bg-sky-600 border border-sky-400 flex items-center justify-center shadow-lg"><CheckIcon className="w-5 h-5 text-white stroke-[3px]" /></div></div>
-                    {sourceImage?.generatedImageUrl && (
+                    {profileImages.some(img => img.generatedImageUrl) && (
                          <button onClick={() => setProfileImages(prev => prev.map(p => ({...p, generatedImageUrl: undefined, status: 'idle'})))} className="absolute top-4 right-4 z-20 bg-zinc-800/80 hover:bg-zinc-700 text-gray-400 p-2 rounded-lg shadow-lg transition-all"><TrashIcon className="w-5 h-5" /></button>
                     )}
-                    <div className="absolute top-14 right-4 z-20 pointer-events-none"><span className="bg-zinc-300 text-zinc-900 text-[10px] font-black px-3 py-1 rounded shadow-md uppercase tracking-widest">KẾT QUẢ AI</span></div>
-                    <div className="flex-1 relative flex items-center justify-center bg-[#050505] min-h-[450px]">
-                        {sourceImage?.status === 'generating' ? (
-                            <div className="flex flex-col items-center gap-4"><div className="w-16 h-16 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div><span className="text-sky-500 text-[10px] font-black uppercase tracking-widest animate-pulse">Đang xử lý AI...</span></div>
-                        ) : sourceImage?.generatedImageUrl ? (
-                            <img src={sourceImage.generatedImageUrl} className="max-w-full max-h-full object-contain cursor-zoom-in" onClick={() => openLightbox(sourceImage)} />
+                    <div className="absolute top-14 right-4 z-20 pointer-events-none"><span className="bg-zinc-300 text-zinc-900 text-[10px] font-black px-3 py-1 rounded shadow-md uppercase tracking-widest">KẾT QUẢ AI {profileImages.length > 1 ? `(${profileImages.filter(i => i.status === 'completed').length}/${profileImages.length})` : ''}</span></div>
+                    <div className="flex-1 relative bg-[#050505] min-h-[450px] overflow-y-auto p-4">
+                        {profileImages.length > 0 ? (
+                            <div className={`grid gap-4 h-full ${profileImages.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                {profileImages.map(img => (
+                                    <div key={img.id} className="relative aspect-[3/4] bg-black/40 rounded-lg overflow-hidden border border-white/5 group">
+                                        {img.status === 'generating' ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 z-10">
+                                                <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                                                <span className="text-[8px] text-sky-500 font-black uppercase tracking-widest">Đang xử lý...</span>
+                                            </div>
+                                        ) : img.generatedImageUrl ? (
+                                            <>
+                                                <img src={img.generatedImageUrl} className="w-full h-full object-contain cursor-zoom-in" onClick={() => openLightbox(img)} />
+                                                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                                    <button onClick={() => openCropper(img)} className="p-1.5 bg-black/60 rounded-md text-white hover:bg-sky-600"><ScissorsIcon className="w-3 h-3" /></button>
+                                                    <a href={img.generatedImageUrl} download={`profile_${img.id}.png`} className="p-1.5 bg-black/60 rounded-md text-white hover:bg-emerald-600"><ArrowDownTrayIcon className="w-3 h-3" /></a>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20">
+                                                <span className="text-[8px] text-zinc-500 font-black uppercase">Chờ tạo ảnh</span>
+                                            </div>
+                                        )}
+                                        {img.error && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-2 bg-red-900/20 text-center">
+                                                <span className="text-[8px] text-red-400 font-bold">{img.error}</span>
+                                                <button onClick={() => handleRegenerateImage(img)} className="mt-2 text-[8px] bg-red-600 text-white px-2 py-1 rounded">Thử lại</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center opacity-20 p-10 select-none"><SparklesIcon className="w-20 h-20 text-zinc-700 mb-6" /><span className="text-zinc-500 font-black uppercase tracking-tighter text-center">Kết quả sẽ hiển thị ở đây</span></div>
+                            <div className="flex flex-col items-center justify-center opacity-20 p-10 select-none h-full w-full">
+                                <SparklesIcon className="w-20 h-20 text-zinc-700 mb-6" />
+                                <span className="text-zinc-500 font-black uppercase tracking-tighter text-center">Kết quả sẽ hiển thị ở đây</span>
+                            </div>
                         )}
                     </div>
                     <div className="p-3 bg-[#111] border-t border-zinc-800 flex gap-2">
-                        <button onClick={() => sourceImage && handleRegenerateImage(sourceImage)} disabled={!sourceImage || sourceImage.status === 'generating'} className="flex-[2] py-3 bg-[#e65100] hover:bg-[#ff6d00] text-white rounded-lg font-black text-sm uppercase flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-30">{sourceImage?.status === 'generating' ? <ArrowPathIcon className="w-5 h-5 animate-spin" /> : "TẠO ẢNH"}</button>
-                        <button disabled={!sourceImage?.generatedImageUrl} className="w-12 py-3 bg-zinc-800 hover:bg-zinc-700 text-gray-300 rounded-lg flex items-center justify-center border border-zinc-700 disabled:opacity-30" onClick={() => sourceImage && openCropper(sourceImage)}><ScissorsIcon className="w-5 h-5" /></button>
-                        <a href={sourceImage?.generatedImageUrl || '#'} download="nhc_profile_result.png" onClick={e => !sourceImage?.generatedImageUrl && e.preventDefault()} className={`flex-[2] py-3 bg-[#0288d1] hover:bg-[#03a9f4] text-white rounded-lg font-black text-sm uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${!sourceImage?.generatedImageUrl ? 'opacity-30 cursor-not-allowed' : ''}`}><ArrowDownTrayIcon className="w-5 h-5 stroke-[2px]" /> TẢI VỀ</a>
+                        <button 
+                            onClick={handleGenerateAll} 
+                            disabled={!sourceImage || profileImages.every(img => img.status === 'generating')} 
+                            className="flex-1 py-3 bg-[#e65100] hover:bg-[#ff6d00] text-white rounded-lg font-black text-sm uppercase flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-30"
+                        >
+                            {profileImages.some(img => img.status === 'generating') ? <ArrowPathIcon className="w-5 h-5 animate-spin" /> : `TẠO ${profileImages.filter(i => i.isSelected).length} ẢNH ĐÃ CHỌN`}
+                        </button>
                     </div>
                 </div>
 
@@ -1480,7 +1602,7 @@ const App: React.FC = () => {
                 <div className="flex flex-col border border-indigo-900/30 bg-[#0a0a0a] rounded-xl overflow-hidden shadow-2xl relative">
                     <div className="absolute top-4 left-4 z-20 pointer-events-none"><span className="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded shadow-md uppercase tracking-widest border border-indigo-400/30">IN XẾP ẢNH AI</span></div>
                     <div className="flex-1 relative flex items-center justify-center bg-[#0d0d0d] min-h-[450px] p-6 overflow-hidden">
-                        {sourceImage?.generatedImageUrl ? (
+                        {firstGeneratedUrl ? (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-4">
                                 {/* Print Preview Canvas Representation */}
                                 <div className="bg-white p-4 shadow-2xl rounded-sm aspect-[10/15] h-[350px] relative overflow-hidden flex items-center justify-center">
@@ -1488,15 +1610,15 @@ const App: React.FC = () => {
                                         {printLayout === 'mixed' ? (
                                             <>
                                                 <div className="col-span-2 row-span-1 border border-gray-100 flex gap-1">
-                                                    <img src={sourceImage.generatedImageUrl} className="w-full h-full object-cover" />
-                                                    <img src={sourceImage.generatedImageUrl} className="w-full h-full object-cover" />
+                                                    <img src={firstGeneratedUrl} className="w-full h-full object-cover" />
+                                                    <img src={firstGeneratedUrl} className="w-full h-full object-cover" />
                                                 </div>
-                                                <div className="col-span-1 row-span-1 border border-gray-100"><img src={sourceImage.generatedImageUrl} className="w-full h-full object-cover" /></div>
-                                                <div className="col-span-1 row-span-1 border border-gray-100"><img src={sourceImage.generatedImageUrl} className="w-full h-full object-cover" /></div>
+                                                <div className="col-span-1 row-span-1 border border-gray-100"><img src={firstGeneratedUrl} className="w-full h-full object-cover" /></div>
+                                                <div className="col-span-1 row-span-1 border border-gray-100"><img src={firstGeneratedUrl} className="w-full h-full object-cover" /></div>
                                             </>
                                         ) : (
                                             printItems[printLayout].map(i => (
-                                                <div key={i} className="border border-gray-100"><img src={sourceImage.generatedImageUrl} className="w-full h-full object-cover" /></div>
+                                                <div key={i} className="border border-gray-100"><img src={firstGeneratedUrl} className="w-full h-full object-cover" /></div>
                                             ))
                                         )}
                                     </div>
@@ -1509,29 +1631,191 @@ const App: React.FC = () => {
                         )}
                     </div>
                     
-                    <div className="p-3 bg-[#111] border-t border-zinc-800 space-y-3">
-                        {/* Layout Selector Buttons */}
-                        <div className="grid grid-cols-4 gap-1.5">
-                            {[
-                                { id: '4x6', label: '4x6' },
-                                { id: '3x4', label: '3x4' },
-                                { id: '2x3', label: '2x3' },
-                                { id: 'mixed', label: 'Mix' }
-                            ].map(layout => (
-                                <button 
-                                    key={layout.id}
-                                    onClick={() => setPrintLayout(layout.id as PrintLayoutType)}
-                                    className={`py-1.5 rounded text-[10px] font-black uppercase transition-all border ${printLayout === layout.id ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:bg-zinc-700'}`}
-                                >
-                                    {layout.label}
-                                </button>
-                            ))}
+                    <div className="p-4 bg-[#111] border-t border-zinc-800 overflow-y-auto max-h-[400px] custom-scrollbar space-y-6">
+                        {/* Cắt theo tỷ lệ */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Cắt theo tỷ lệ</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button className="py-2 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-bold text-gray-300 hover:bg-zinc-700 transition-all">Vuông (1:1)</button>
+                                <button className="py-2 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-bold text-gray-300 hover:bg-zinc-700 transition-all">Ngang (16:9)</button>
+                                <button className="py-2 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-bold text-gray-300 hover:bg-zinc-700 transition-all">Dọc (9:16)</button>
+                            </div>
                         </div>
-                        {/* Print Ready Download Button */}
+
+                        {/* Kích thước tùy chỉnh */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Kích thước tùy chỉnh (px)</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input 
+                                    type="text" 
+                                    placeholder="Rộng" 
+                                    value={customPrintWidth}
+                                    onChange={e => setCustomPrintWidth(e.target.value)}
+                                    className="bg-black border border-zinc-800 rounded px-3 py-2 text-xs text-white outline-none focus:border-zinc-600"
+                                />
+                                <input 
+                                    type="text" 
+                                    placeholder="Cao" 
+                                    value={customPrintHeight}
+                                    onChange={e => setCustomPrintHeight(e.target.value)}
+                                    className="bg-black border border-zinc-800 rounded px-3 py-2 text-xs text-white outline-none focus:border-zinc-600"
+                                />
+                            </div>
+                            <button className="w-full py-2 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-black text-gray-300 uppercase tracking-widest hover:bg-zinc-700">Resize</button>
+                        </div>
+
+                        {/* Chọn khổ giấy in */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Chọn khổ giấy in</label>
+                            <div className="relative">
+                                <select 
+                                    value={printPaperSize}
+                                    onChange={e => setPrintPaperSize(e.target.value)}
+                                    className="w-full bg-black border border-zinc-800 rounded px-3 py-2.5 text-xs text-white outline-none appearance-none cursor-pointer focus:border-zinc-600"
+                                >
+                                    <optgroup label="Khổ ảnh phổ biến" className="bg-zinc-900">
+                                        <option value="6x9 cm">6x9 cm (Ví bóp)</option>
+                                        <option value="9x12 cm">9x12 cm</option>
+                                        <option value="10x15 cm">10x15 cm (4x6")</option>
+                                        <option value="13x18 cm">13x18 cm (5x7")</option>
+                                        <option value="15x21 cm">15x21 cm (6x8")</option>
+                                        <option value="20x25 cm">20x25 cm (8x10")</option>
+                                        <option value="20x30 cm">20x30 cm (8x12")</option>
+                                    </optgroup>
+                                    <optgroup label="Khổ giấy tiêu chuẩn" className="bg-zinc-900">
+                                        <option value="A6">A6 (10.5x14.8 cm)</option>
+                                        <option value="A5">A5 (14.8x21 cm)</option>
+                                        <option value="A4">A4 (21x29.7 cm)</option>
+                                        <option value="A3">A3 (29.7x42 cm)</option>
+                                        <option value="A2">A2 (42x59.4 cm)</option>
+                                        <option value="A1">A1 (59.4x84.1 cm)</option>
+                                        <option value="A0">A0 (84.1x118.9 cm)</option>
+                                    </optgroup>
+                                    <optgroup label="Khổ ảnh lớn / Phóng" className="bg-zinc-900">
+                                        <option value="30x40 cm">30x40 cm</option>
+                                        <option value="30x45 cm">30x45 cm</option>
+                                        <option value="40x60 cm">40x60 cm</option>
+                                        <option value="50x75 cm">50x75 cm</option>
+                                        <option value="60x90 cm">60x90 cm</option>
+                                    </optgroup>
+                                </select>
+                                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                            </div>
+                        </div>
+
+                        {/* Sắp xếp ảnh để in */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Sắp xếp ảnh để in (khổ {printPaperSize})</label>
+                            <div className="flex flex-col gap-2">
+                                <button 
+                                    onClick={() => setPrintLayout('3x4')}
+                                    className={`py-2.5 rounded text-[10px] font-bold uppercase transition-all border ${printLayout === '3x4' ? 'bg-zinc-700 border-zinc-500 text-white' : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:bg-zinc-700'}`}
+                                >
+                                    Xếp ảnh 3x4
+                                </button>
+                                <button 
+                                    onClick={() => setPrintLayout('4x6')}
+                                    className={`py-2.5 rounded text-[10px] font-bold uppercase transition-all border ${printLayout === '4x6' ? 'bg-zinc-700 border-zinc-500 text-white' : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:bg-zinc-700'}`}
+                                >
+                                    Xếp ảnh 4x6
+                                </button>
+                                <button 
+                                    onClick={() => setPrintLayout('mixed')}
+                                    className={`py-2.5 rounded text-[10px] font-bold uppercase transition-all border ${printLayout === 'mixed' ? 'bg-zinc-700 border-zinc-500 text-white' : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:bg-zinc-700'}`}
+                                >
+                                    3 ảnh 4x6 + 4 ảnh 3x4
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Cài đặt nâng cao */}
+                        <div className="space-y-4 pt-2 border-t border-zinc-800">
+                            <h4 className="text-[11px] font-black text-white uppercase tracking-widest">Cài đặt nâng cao xếp ảnh</h4>
+                            
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-[10px] font-bold text-zinc-500 uppercase">
+                                    <span>Khoảng cách giữa các ảnh (mm)</span>
+                                    <span className="text-white">{printSpacing}mm</span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    min="0" 
+                                    max="10" 
+                                    value={printSpacing}
+                                    onChange={e => setPrintSpacing(parseInt(e.target.value))}
+                                    className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase">Màu chỉ viền mỗi ảnh</label>
+                                <div className="flex gap-2">
+                                    <div 
+                                        className="w-10 h-10 rounded border border-zinc-700 flex-none" 
+                                        style={{ backgroundColor: printBorderColor }}
+                                    ></div>
+                                    <div className="relative flex-1">
+                                        <input 
+                                            type="text" 
+                                            value={printBorderColor}
+                                            onChange={e => setPrintBorderColor(e.target.value)}
+                                            className="w-full h-10 bg-black border border-zinc-800 rounded px-3 text-xs text-white font-mono outline-none focus:border-zinc-600"
+                                        />
+                                        <button 
+                                            onClick={() => setPrintBorderColor('#CCCCCC')}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-zinc-800 rounded text-zinc-500"
+                                        >
+                                            <XMarkIcon className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Số lượng ảnh tùy chọn */}
+                        <div className="space-y-4 pt-2 border-t border-zinc-800">
+                            <h4 className="text-[11px] font-black text-white uppercase tracking-widest">Số lượng ảnh tùy chọn</h4>
+                            
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-zinc-500 uppercase">Ảnh 2x3cm</span>
+                                    <input 
+                                        type="number" 
+                                        value={customCount2x3}
+                                        onChange={e => setCustomCount2x3(parseInt(e.target.value) || 0)}
+                                        className="w-16 bg-black border border-zinc-800 rounded px-2 py-1.5 text-xs text-white text-center outline-none focus:border-zinc-600"
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-zinc-500 uppercase">Ảnh 3x4cm</span>
+                                    <input 
+                                        type="number" 
+                                        value={customCount3x4}
+                                        onChange={e => setCustomCount3x4(parseInt(e.target.value) || 0)}
+                                        className="w-16 bg-black border border-zinc-800 rounded px-2 py-1.5 text-xs text-white text-center outline-none focus:border-zinc-600"
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-zinc-500 uppercase">Ảnh 4x6cm</span>
+                                    <input 
+                                        type="number" 
+                                        value={customCount4x6}
+                                        onChange={e => setCustomCount4x6(parseInt(e.target.value) || 0)}
+                                        className="w-16 bg-black border border-zinc-800 rounded px-2 py-1.5 text-xs text-white text-center outline-none focus:border-zinc-600"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <button className="w-full py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-[11px] font-black text-gray-300 uppercase tracking-widest hover:bg-zinc-700 transition-all">
+                            Tạo bố cục tùy chọn
+                        </button>
+
                         <button 
-                            onClick={() => sourceImage?.generatedImageUrl && handleDownloadPrintSheet(sourceImage.generatedImageUrl)}
-                            disabled={!sourceImage?.generatedImageUrl}
-                            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-black text-sm uppercase flex items-center justify-center gap-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            onClick={() => firstGeneratedUrl && handleDownloadPrintSheet(firstGeneratedUrl)}
+                            disabled={!firstGeneratedUrl}
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black text-sm uppercase flex items-center justify-center gap-3 shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <PrinterIcon className="w-6 h-6 stroke-[2px]" />
                             TẢI ẢNH IN NGAY

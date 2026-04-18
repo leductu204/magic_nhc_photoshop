@@ -107,7 +107,7 @@ export interface GenerationSettings {
 }
 
 export interface ProfileSettings {
-    gender: 'nam' | 'nu';
+    gender: 'nam' | 'nu' | 'auto';
     subject: 'nguoi-lon' | 'thanh-nien' | 'tre-em';
     attire: string;
     hairstyle: string;
@@ -120,6 +120,9 @@ export interface ProfileSettings {
     customAttireImage: File | null;
     customAttirePreview: string | null;
     enableUpscale: boolean;
+    batchCount: number;
+    modelType?: ModelType;
+    customApiKey?: string;
 }
 
 export interface StoredImage {

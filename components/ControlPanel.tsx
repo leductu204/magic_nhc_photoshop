@@ -601,7 +601,29 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                           <div className="flex gap-2">
                               <button onClick={() => onProfileSettingsChange({ gender: 'nam' })} className={`flex-1 py-3 rounded-full border-2 font-black text-xs transition-all ${profileSettings.gender === 'nam' ? 'bg-blue-600 border-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-[#1a1a1a] border-zinc-700 text-gray-500'}`}>Nam</button>
                               <button onClick={() => onProfileSettingsChange({ gender: 'nu' })} className={`flex-1 py-3 rounded-full border-2 font-black text-xs transition-all ${profileSettings.gender === 'nu' ? 'bg-[#ec4899] border-[#ec4899] text-white shadow-[0_0_15px_rgba(236,72,153,0.4)]' : 'bg-[#1a1a1a] border-zinc-700 text-gray-500'}`}>Nữ</button>
+                              <button onClick={() => onProfileSettingsChange({ gender: 'auto' as any })} className={`flex-1 py-3 rounded-full border-2 font-black text-xs transition-all ${profileSettings.gender === 'auto' ? 'bg-emerald-600 border-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'bg-[#1a1a1a] border-zinc-700 text-gray-500'}`}>Tự động</button>
                           </div>
+                      </div>
+
+                      <div className="bg-black/40 border border-white/5 rounded-2xl p-4 space-y-4">
+                          <div className="flex justify-between items-center">
+                              <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                                  <Squares2X2Icon className="w-4 h-4" /> Tạo ảnh hàng loạt
+                              </label>
+                              <span className="text-[10px] font-black text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded-md">{profileSettings.batchCount || 1} ẢNH</span>
+                          </div>
+                          <div className="flex gap-2">
+                              {[1, 2, 3, 4].map(num => (
+                                  <button
+                                      key={num}
+                                      onClick={() => onProfileSettingsChange({ batchCount: num } as any)}
+                                      className={`flex-1 py-2 rounded-xl border-2 font-black text-[10px] transition-all ${profileSettings.batchCount === num ? 'bg-sky-600 border-sky-500 text-white shadow-lg' : 'bg-black/40 border-zinc-800 text-gray-500 hover:border-zinc-700'}`}
+                                  >
+                                      {num}
+                                  </button>
+                              ))}
+                          </div>
+                          <p className="text-[8px] text-gray-500 italic text-center">*Tự động tạo nhiều biến thể ảnh hồ sơ cùng lúc</p>
                       </div>
 
                       <div>
