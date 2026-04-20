@@ -763,7 +763,7 @@ export const generateBackgroundSwapImage = async (
     } catch (e) { throw new Error("Lỗi khi thay nền AI."); }
 };
 
-export const analyzeRestorationImage = async (file: File): Promise<string> => {
+export const analyzeRestorationImage = async (file: File, _modelType?: ModelType): Promise<string> => {
   try {
     const ai = getAI();
     const base64Data = await resizeImage(file, 1024, 1024, 0.8);

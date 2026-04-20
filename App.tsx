@@ -952,7 +952,10 @@ const App: React.FC = () => {
       if (!currentImage) return;
       setIsAnalyzingRestoration(true);
       try {
-          const res = await analyzeRestorationImage(currentImage.file || new File([await (await fetch(currentImage.originalPreviewUrl)).blob()], "tmp.jpg"));
+          const res = await analyzeRestorationImage(
+              currentImage.file || new File([await (await fetch(currentImage.originalPreviewUrl)).blob()], "tmp.jpg"),
+              restorationSettings.modelType
+          );
           setRestorationSettings(prev => ({ ...prev, userPrompt: res }));
       } catch (e) {} finally { setIsAnalyzingRestoration(false); }
   };
