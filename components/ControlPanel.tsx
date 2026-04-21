@@ -87,6 +87,29 @@ const ULTRA_RESTO_JSON_PROMPT = `{
   "clean_up": { "reconstruct_missing_parts": "museum-grade", "archival_quality": "museum-grade restoration" }
 }`;
 
+const CUSTOM_ULTRA_RESTO_PROMPT = `{
+  "task": "ultra_high_fidelity_restoration_and_colorization",
+  "identity_lock": {
+    "preserve_face_structure": true,
+    "preserve_expression": true,
+    "preserve_age": true,
+    "preserve_ethnicity": true,
+    "allow_only": ["repair_damage", "enhance_clarity", "natural_colorization"]
+  },
+  "quality": {
+    "detail_level": "maximum",
+    "noise_reduction": "high",
+    "texture_preservation": "high",
+    "output_sharpness": "crisp_natural"
+  },
+  "colorization": {
+    "style": "realistic_cinematic",
+    "skin_tone": "natural",
+    "avoid_oversaturation": true
+  },
+  "output_format": "Ultra-high-definition digital photograph, museum-grade restoration."
+}`;
+
 const SUPER_QUALITY_PROMPT = `Phục chế tấm ảnh cũ này với chất lượng cao: xóa vết trầy xước, bụi, vết bẩn, nếp gấp, phục hồi các vùng bị mờ, chỉnh sáng và độ tương phản, làm nét các chi tiết trên khuôn mặt, tăng cường màu sắc tự nhiên, giữ nguyên kết cấu gốc, giữ tông da chân thực, không làm da quá mịn giả. 
 ${ULTRA_RESTO_JSON_PROMPT}`;
 
@@ -1334,6 +1357,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                             <span className="bg-blue-600 text-[8px] px-1.5 py-0.5 rounded font-black">PREMIUM</span>
                           </div>
                           <div className="text-[9px] text-blue-300/60 font-medium italic mt-0.5">Giữ khuôn mặt & cấu trúc gốc 100%</div>
+                        </div>
+                      </button>
+
+                      <button 
+                        onClick={() => onSettingsChange({ userPrompt: CUSTOM_ULTRA_RESTO_PROMPT })} 
+                        className={`w-full bg-emerald-500/5 hover:bg-emerald-500/10 border p-4 rounded-2xl text-left transition-all flex items-center gap-4 group ${settings.userPrompt === CUSTOM_ULTRA_RESTO_PROMPT ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-900/20' : 'border-emerald-500/20'}`}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600/20 to-teal-600/20 border border-emerald-500/30 group-hover:scale-110 transition-transform flex-shrink-0 flex items-center justify-center shadow-lg shadow-emerald-900/20">
+                          <WrenchScrewdriverIcon className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[11px] font-black text-white uppercase flex items-center justify-between tracking-tight">
+                            Yêu Cầu Tùy Chỉnh
+                            <span className="bg-emerald-600 text-[8px] px-1.5 py-0.5 rounded font-black">VIP</span>
+                          </div>
+                          <div className="text-[9px] text-emerald-300/60 font-medium italic mt-0.5">Phục chế siêu thực & Identity Lock Max</div>
                         </div>
                       </button>
 
