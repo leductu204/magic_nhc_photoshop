@@ -24,6 +24,39 @@ const buildPrompt = (settings: GenerationSettings, fallback: string) => ({
   userPrompt: settings.userPrompt?.trim() || fallback,
 });
 
+const buildSymmetricPrompt = (settings: GenerationSettings) => {
+  const symInstructions: string[] = [];
+  if (settings.symHairSmoothEnable) symInstructions.push(`- Smooth and reflow hair texture (Intensity: ${settings.symHairSmooth}).`);
+  if (settings.symEyeDistanceEnable) symInstructions.push(`- Adjust eye distance for balance (Intensity: ${settings.symEyeDistance}).`);
+  if (settings.symEyeSizeEnable) symInstructions.push(`- Balance eye size horizontally and vertically (Intensity: ${settings.symEyeSize}).`);
+  if (settings.symEyeLazyEnable) symInstructions.push(`- Correct lazy eye or drooping eyelids (Intensity: ${settings.symEyeLazy}).`);
+  if (settings.symNoseShrinkEnable) symInstructions.push(`- Refine and slim nostrils (Intensity: ${settings.symNoseShrink}).`);
+  if (settings.symNoseStraightenEnable) symInstructions.push(`- Straighten nasal bridge (Intensity: ${settings.symNoseStraighten}).`);
+  if (settings.symNoseLiftEnable) symInstructions.push(`- Slightly lift the nose tip (Intensity: ${settings.symNoseLift}).`);
+  if (settings.symMouthAlignEnable) symInstructions.push(`- Align mouth position and balance lips (Intensity: ${settings.symMouthAlign}).`);
+  if (settings.symMouthTeethEnable) symInstructions.push(`- Refine teeth visibility and gum line (Intensity: ${settings.symMouthTeeth}).`);
+  if (settings.symMouthWrinklesEnable) symInstructions.push(`- Remove lip wrinkles and smooth texture (Intensity: ${settings.symMouthWrinkles}).`);
+  if (settings.symJawSlimEnable) symInstructions.push(`- Slim and refine jawline contour (Intensity: ${settings.symJawSlim}).`);
+  if (settings.symChinVLineEnable) symInstructions.push(`- Sculpt V-line chin profile (Intensity: ${settings.symChinVLine}).`);
+  if (settings.symLegSlimEnable) symInstructions.push(`- Slim leg proportions naturally (Intensity: ${settings.symLegSlim}).`);
+  if (settings.symLegLengthenEnable) symInstructions.push(`- Extend leg length proportional to height (Intensity: ${settings.symLegLengthen}).`);
+  if (settings.symArmSlimEnable) symInstructions.push(`- Slim arm contours (Intensity: ${settings.symArmSlim}).`);
+  if (settings.symArmLengthenEnable) symInstructions.push(`- Extend arm length naturally (Intensity: ${settings.symArmLengthen}).`);
+
+  return {
+    ...settings,
+    userPrompt: `
+AI structural balance and proportional symmetry.
+Mode: ${settings.balanceMode || 'full'}.
+Overall intensity: ${settings.symmetryIntensity || 0.8}/1.0.
+Specific adjustments:
+${symInstructions.length ? symInstructions.join('\n') : '- Balance facial features, body posture, and natural proportions.'}
+${settings.userPrompt?.trim() ? `Custom instruction: ${settings.userPrompt.trim()}` : ''}
+Keep identity, age, expression, skin texture, clothing, and camera perspective natural. Avoid over-retouching or uncanny symmetry.
+`.trim(),
+  };
+};
+
 export async function generateProfileImage(file: File, settings: ProfileSettings) {
   // Profile luôn qua tramSangTao
   const { gender, subject, attire, hairstyle, hairColor, background, beautifyLevel, customPrompt, customBackgroundColor, customAttireImage } = settings;
@@ -96,7 +129,7 @@ export async function generateRemoveBackgroundImage(file: File, settings: Genera
 
 export async function generateSymmetricEditImage(file: File, settings: GenerationSettings) {
   if (!useTram(settings)) return generateSymmetricEditImageGemini(file, settings);
-  return generateWithTramSangTao([file], buildPrompt(settings, 'Chỉnh sửa cân đối cơ thể và tỉ lệ tự nhiên'));
+  return generateWithTramSangTao([file], buildSymmetricPrompt(settings));
 }
 
 export async function generateBabyUltrasoundImage(fatherFile: File, motherFile: File, settings: GenerationSettings) {

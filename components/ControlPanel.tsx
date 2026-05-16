@@ -1130,6 +1130,42 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   };
 
   const renderSymmetricEditSettings = () => {
+    const renderSymmetryItem = (key: string, label: string) => {
+        const enableKey = `${key}Enable`;
+        const isEnabled = (settings as any)[enableKey];
+        const value = (settings as any)[key] !== undefined ? (settings as any)[key] : 0.5;
+
+        return (
+            <div key={key} className="flex flex-col gap-2">
+                <div className="flex items-center gap-4 cursor-pointer group">
+                    <div className="relative flex items-center" onClick={() => onSettingsChange({ [enableKey]: !isEnabled })}>
+                        <div className={`w-4 h-4 rounded-sm border-2 transition-all flex items-center justify-center ${isEnabled ? 'bg-white border-white' : 'bg-transparent border-gray-600 group-hover:border-gray-500'}`}>
+                            {isEnabled && <div className="w-1.5 h-1.5 bg-black rounded-sm" />}
+                        </div>
+                    </div>
+                    <span
+                        className={`text-[10px] font-bold transition-colors flex-1 uppercase tracking-wider ${isEnabled ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-400'}`}
+                        onClick={() => onSettingsChange({ [enableKey]: !isEnabled })}
+                    >
+                        {label}
+                    </span>
+                    <div className="flex items-center gap-3 w-32">
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={value}
+                            disabled={!isEnabled}
+                            onChange={e => onSettingsChange({ [key]: parseFloat(e.target.value) })}
+                            className={`w-full h-1 rounded-full appearance-none cursor-pointer accent-sky-500 ${!isEnabled ? 'bg-zinc-800/50' : 'bg-zinc-800'}`}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6">
             <div 
@@ -1184,6 +1220,70 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                   {settings.balanceMode === opt.value && <CheckIcon className="w-4 h-4 text-violet-400" />}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        <div className="border border-white/5 rounded-2xl p-5 space-y-4 bg-black/20">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <PlusIcon className="w-3 h-3" /> Tóc
+                            </h4>
+                            {renderSymmetryItem('symHairSmooth', 'Làm mượt tóc')}
+                        </div>
+
+                        <div className="border border-white/5 rounded-2xl p-5 space-y-4 bg-black/20">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <PlusIcon className="w-3 h-3" /> Mắt
+                            </h4>
+                            <div className="space-y-4">
+                                {renderSymmetryItem('symEyeDistance', 'Cân đối khoảng cách')}
+                                {renderSymmetryItem('symEyeSize', 'Cân chỉnh to/nhỏ')}
+                                {renderSymmetryItem('symEyeLazy', 'Chỉnh lé/sụp mí')}
+                            </div>
+                        </div>
+
+                        <div className="border border-white/5 rounded-2xl p-5 space-y-4 bg-black/20">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <PlusIcon className="w-3 h-3" /> Mũi
+                            </h4>
+                            <div className="space-y-4">
+                                {renderSymmetryItem('symNoseShrink', 'Thu nhỏ cánh mũi')}
+                                {renderSymmetryItem('symNoseStraighten', 'Kéo thẳng sống mũi')}
+                                {renderSymmetryItem('symNoseLift', 'Nâng nhẹ đầu mũi')}
+                            </div>
+                        </div>
+
+                        <div className="border border-white/5 rounded-2xl p-5 space-y-4 bg-black/20">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <PlusIcon className="w-3 h-3" /> Miệng & Răng
+                            </h4>
+                            <div className="space-y-4">
+                                {renderSymmetryItem('symMouthAlign', 'Chỉnh miệng ngay ngắn')}
+                                {renderSymmetryItem('symMouthTeeth', 'Sửa răng & che lợi')}
+                                {renderSymmetryItem('symMouthWrinkles', 'Chỉnh hết nhăn môi')}
+                            </div>
+                        </div>
+
+                        <div className="border border-white/5 rounded-2xl p-5 space-y-4 bg-black/20">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <PlusIcon className="w-3 h-3" /> Cằm & Hàm
+                            </h4>
+                            <div className="space-y-4">
+                                {renderSymmetryItem('symJawSlim', 'Thon gọn viền hàm')}
+                                {renderSymmetryItem('symChinVLine', 'Chỉnh cằm V-line')}
+                            </div>
+                        </div>
+
+                        <div className="border border-white/5 rounded-2xl p-5 space-y-4 bg-black/20">
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <PlusIcon className="w-3 h-3" /> Chân & Tay
+                            </h4>
+                            <div className="space-y-4">
+                                {renderSymmetryItem('symLegSlim', 'Thon gọn chân')}
+                                {renderSymmetryItem('symLegLengthen', 'Kéo dài chân')}
+                                {renderSymmetryItem('symArmSlim', 'Thon gọn tay')}
+                                {renderSymmetryItem('symArmLengthen', 'Kéo dài tay')}
+                            </div>
                         </div>
                     </div>
 

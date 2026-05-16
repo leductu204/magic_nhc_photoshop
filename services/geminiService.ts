@@ -346,14 +346,34 @@ export const generateSymmetricEditImage = async (
         let originalBase64 = await resizeImage(originalFile);
         const { symmetryIntensity = 0.8, balanceMode = 'full', userPrompt, enableUpscale } = settings;
 
+        const symInstructions: string[] = [];
+        if (settings.symHairSmoothEnable) symInstructions.push(`- Smooth and reflow hair texture (Intensity: ${settings.symHairSmooth}).`);
+        if (settings.symEyeDistanceEnable) symInstructions.push(`- Adjust eye distance for balance (Intensity: ${settings.symEyeDistance}).`);
+        if (settings.symEyeSizeEnable) symInstructions.push(`- Balance eye size horizontally and vertically (Intensity: ${settings.symEyeSize}).`);
+        if (settings.symEyeLazyEnable) symInstructions.push(`- Correct lazy eye or drooping eyelids (Intensity: ${settings.symEyeLazy}).`);
+        if (settings.symNoseShrinkEnable) symInstructions.push(`- Refine and slim nostrils (Intensity: ${settings.symNoseShrink}).`);
+        if (settings.symNoseStraightenEnable) symInstructions.push(`- Straighten nasal bridge (Intensity: ${settings.symNoseStraighten}).`);
+        if (settings.symNoseLiftEnable) symInstructions.push(`- Slightly lift the tip of the nose (Intensity: ${settings.symNoseLift}).`);
+        if (settings.symMouthAlignEnable) symInstructions.push(`- Align mouth position and balance lips (Intensity: ${settings.symMouthAlign}).`);
+        if (settings.symMouthTeethEnable) symInstructions.push(`- Refine teeth visibility and gum line (Intensity: ${settings.symMouthTeeth}).`);
+        if (settings.symMouthWrinklesEnable) symInstructions.push(`- Remove lip wrinkles and smooth texture (Intensity: ${settings.symMouthWrinkles}).`);
+        if (settings.symJawSlimEnable) symInstructions.push(`- Slim and refine jawline contour (Intensity: ${settings.symJawSlim}).`);
+        if (settings.symChinVLineEnable) symInstructions.push(`- Sculpt V-line chin profile (Intensity: ${settings.symChinVLine}).`);
+        if (settings.symLegSlimEnable) symInstructions.push(`- Slim leg proportions naturally (Intensity: ${settings.symLegSlim}).`);
+        if (settings.symLegLengthenEnable) symInstructions.push(`- Extend leg length proportional to height (Intensity: ${settings.symLegLengthen}).`);
+        if (settings.symArmSlimEnable) symInstructions.push(`- Slim arm contours (Intensity: ${settings.symArmSlim}).`);
+        if (settings.symArmLengthenEnable) symInstructions.push(`- Extend arm length naturally (Intensity: ${settings.symArmLengthen}).`);
+
         const prompt = `
         TASK: AI STRUCTURAL BALANCE & PROPORTIONAL SYMMETRY.
         INSTRUCTION: 
         1. Analyze the subject's structure based on mode: ${balanceMode}.
-        2. Apply symmetry correction to features (eyes, nose, mouth, ears) while strictly maintaining the person's unique identity.
-        3. Correct minor postural tilts or limb length discrepancies to align with professional photography standards.
-        4. Intensity of correction: ${symmetryIntensity}/1.0.
-        5. Ensure natural results - avoid the "uncanny valley" effect by keeping organic irregularities that define identity.
+        2. Apply symmetry correction while strictly maintaining the person's unique identity.
+        3. Specific adjustments:
+        ${symInstructions.length > 0 ? symInstructions.join('\n        ') : "- Balance facial features, body posture, and proportional alignment."}
+        4. Correct minor postural tilts or limb discrepancies to align with professional standards.
+        5. Overall intensity of correction: ${symmetryIntensity}/1.0.
+        6. Ensure natural results - avoid the "uncanny valley" effect.
         ${userPrompt ? `Custom Balance Instruction: ${userPrompt}` : ""}
         
         ${enableUpscale ? "ENABLE 'CodeFormer' FACE ENHANCEMENT." : ""}
@@ -890,9 +910,9 @@ export const generateProfileImage = async (originalFile: File, settings: Profile
     } catch (error) { throw new Error("Failed to generate profile photo."); }
 };
 
-export const preprocessClothImage = async (file: File): Promise<Part> => {
+export const preprocessClothImage = async (file: File, modelType?: ModelType, customApiKey?: string): Promise<Part> => {
     try {
-        const ai = getAI();
+        const ai = getAI(modelType, customApiKey);
         const initialPart = await fileToPart(file);
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
@@ -903,33 +923,55 @@ export const preprocessClothImage = async (file: File): Promise<Part> => {
     } catch (error) { return await fileToPart(file); }
 };
 
-export const analyzeImageText = async (file: File, type: 'background' | 'pose'): Promise<string> => {
+export const analyzeImageText = async (file: File, type: 'background' | 'pose' | 'clothing', modelType?: ModelType, customApiKey?: string): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(modelType, customApiKey);
         const imagePart = await fileToPart(file);
+        const prompt = type === 'clothing'
+          ? 'Describe this clothing item in Vietnamese for AI try-on: garment type, color, material, pattern, logo, neckline, sleeve, fit, and key details. Keep it concise.'
+          : `Analyze ${type} of this image in Vietnamese.`;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [imagePart, { text: `Analyze ${type} of this image in Vietnamese.` }] },
+            contents: { parts: [imagePart, { text: prompt }] },
         });
         return response.text || "";
     } catch (error) { return ""; }
 };
 
-export const generateClothingSwap = async (personImage: Part, clothImage: Part, backgroundDesc: string | null, positionDesc: string | null, aspectRatio: string, customPromptText: string, enableUpscale: boolean): Promise<string> => {
+export const generateClothingSwap = async (personImage: Part, clothImage: Part | null, faceImage: Part | null, backgroundDesc: string | null, positionDesc: string | null, aspectRatio: string, customPromptText: string, enableUpscale: boolean, modelType?: ModelType, customApiKey?: string): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = getAI(modelType, customApiKey);
+        const parts: Part[] = [personImage];
+        if (clothImage) parts.push(clothImage);
+        if (faceImage) parts.push(faceImage);
+
+        const prompt = `
+        TASK: AI CLOTHING SWAP & FACE SWAP.
+        INSTRUCTION:
+        1. Take the person from the first image.
+        ${clothImage ? "2. Replace their clothing with the clothing from the second image." : "2. Keep the original clothing."}
+        ${faceImage ? `3. Replace the person's face with the face from the ${clothImage ? 'third' : 'second'} image, ensuring a seamless and natural blend.` : "3. Preserve the original person's face and identity perfectly."}
+        4. Maintain the original pose and body structure.
+        5. ${backgroundDesc ? `Set the background to: ${backgroundDesc}` : "Keep the background consistent and professional."}
+        6. ${positionDesc ? `Use pose guidance: ${positionDesc}` : "Keep posture natural."}
+        7. ${customPromptText ? `Additional Instruction: ${customPromptText}` : ""}
+        8. ${enableUpscale ? "Enable high-definition face and texture enhancement." : ""}
+        STYLE: Professional fashion photography, high-end catalog quality.
+        `;
+        parts.push({ text: prompt });
+
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [personImage, clothImage, { text: "Clothing swap task." }] },
+            contents: { parts },
         });
         const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
         return `data:${imagePart?.inlineData?.mimeType || 'image/png'};base64,${imagePart?.inlineData?.data}`;
     } catch (error) { throw error; }
 };
 
-export const refineClothingResult = async (resultImagePart: Part, prompt: string, aspectRatio: string, enableUpscale: boolean): Promise<string> => {
+export const refineClothingResult = async (resultImagePart: Part, prompt: string, aspectRatio: string, enableUpscale: boolean, modelType?: ModelType, customApiKey?: string): Promise<string> => {
      try {
-            const ai = getAI();
+            const ai = getAI(modelType, customApiKey);
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash-image',
                 contents: { parts: [resultImagePart, { text: prompt }] },

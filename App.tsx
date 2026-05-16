@@ -75,6 +75,38 @@ const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
     lightIntensity: 0.8,
     symmetryIntensity: 0.8,
     balanceMode: 'full',
+    symHairSmoothEnable: false,
+    symHairSmooth: 0.5,
+    symEyeDistanceEnable: false,
+    symEyeDistance: 0.5,
+    symEyeSizeEnable: false,
+    symEyeSize: 0.5,
+    symEyeLazyEnable: false,
+    symEyeLazy: 0.5,
+    symNoseShrinkEnable: false,
+    symNoseShrink: 0.5,
+    symNoseStraightenEnable: false,
+    symNoseStraighten: 0.5,
+    symNoseLiftEnable: false,
+    symNoseLift: 0.5,
+    symMouthAlignEnable: false,
+    symMouthAlign: 0.5,
+    symMouthTeethEnable: false,
+    symMouthTeeth: 0.5,
+    symMouthWrinklesEnable: false,
+    symMouthWrinkles: 0.5,
+    symJawSlimEnable: false,
+    symJawSlim: 0.5,
+    symChinVLineEnable: false,
+    symChinVLine: 0.5,
+    symLegSlimEnable: false,
+    symLegSlim: 0.5,
+    symLegLengthenEnable: false,
+    symLegLengthen: 0.5,
+    symArmSlimEnable: false,
+    symArmSlim: 0.5,
+    symArmLengthenEnable: false,
+    symArmLengthen: 0.5,
     // Fix: babyGender should have a specific default value from the union type.
     babyGender: 'ngau-nhien',
     babyStyle: 'realistic',
@@ -444,7 +476,9 @@ const App: React.FC = () => {
   const [upscaleExpandSettings, setUpscaleExpandSettings] = useState<GenerationSettings>({ ...DEFAULT_GENERATION_SETTINGS, upscaleIntensity: 0.8, expandDirection: 'all' });
 
   const [clothingPerson, setClothingPerson] = useState<{file: File, part: Part | null, url: string} | null>(null);
-  const [clothingCloth, setClothingCloth] = useState<{file: File, part: Part | null, url: string, isProcessing: boolean, isProcessed?: boolean} | null>(null);
+  const [clothingFace, setClothingFace] = useState<{file: File, part: Part | null, url: string} | null>(null);
+  const [clothingCloth, setClothingCloth] = useState<{file: File, part: Part | null, url: string, description?: string | null, isProcessing: boolean, isProcessed?: boolean} | null>(null);
+  const [clothingMode, setClothingMode] = useState<'both' | 'clothing' | 'face'>('both');
   const [clothingBg, setClothingBg] = useState<{file: File, part: Part | null, url: string, description: string | null, isProcessing: boolean} | null>(null);
   const [clothingPose, setClothingPose] = useState<{file: File, part: Part | null, url: string, description: string | null, isProcessing: boolean} | null>(null);
   const [clothingResultUrl, setClothingResultUrl] = useState<string | null>(null);
@@ -453,8 +487,10 @@ const App: React.FC = () => {
   const [clothingAspectRatio, setClothingAspectRatio] = useState<string>('auto');
   const [clothingEnableUpscale, setClothingEnableUpscale] = useState<boolean>(true);
   const [isClothingProcessing, setIsClothingProcessing] = useState<boolean>(false);
+  const [clothingProgress, setClothingProgress] = useState<number>(0);
   const [clothingRefinePrompt, setClothingRefinePrompt] = useState<string>('');
   const [showClothingRefine, setShowClothingRefine] = useState<boolean>(false);
+  const [showOriginalInResult, setShowOriginalInResult] = useState<boolean>(false);
 
   const [paintingImages, setPaintingImages] = useState<ProcessedImage[]>([]);
   const [paintingSettings, setPaintingSettings] = useState<GenerationSettings>({ 
@@ -1168,31 +1204,72 @@ const App: React.FC = () => {
       return stitchAudioBuffers(clips, t, ctx);
   };
 
-  const handleClothingFileUpload = async (slot: 'person' | 'cloth' | 'bg' | 'pose', file: File) => {
+  const handleClothingFileUpload = async (slot: 'person' | 'cloth' | 'bg' | 'pose' | 'face', file: File) => {
       const url = URL.createObjectURL(file);
-      const part = await fileToPart(file);
-      if (slot === 'person') setClothingPerson({ file, url, part });
-      else if (slot === 'cloth') setClothingCloth({ file, url, part, isProcessing: false });
-      else if (slot === 'bg') setClothingBg({ file, url, part, description: null, isProcessing: false });
-      else if (slot === 'pose') setClothingPose({ file, url, part, description: null, isProcessing: false });
+
+      if (slot === 'cloth') setClothingCloth({ file, url, part: null, isProcessing: true });
+      else if (slot === 'bg') setClothingBg({ file, url, part: null, description: null, isProcessing: true });
+      else if (slot === 'pose') setClothingPose({ file, url, part: null, description: null, isProcessing: true });
+
+      try {
+          if (slot === 'cloth') {
+              const part = await preprocessClothImage(file);
+              const description = await analyzeImageText(file, 'clothing', imageSettings.modelType, imageSettings.customApiKey);
+              setClothingCloth({ file, url, part, description, isProcessing: false, isProcessed: true });
+          } else if (slot === 'bg') {
+              const part = await fileToPart(file);
+              const description = await analyzeImageText(file, 'background', imageSettings.modelType, imageSettings.customApiKey);
+              setClothingBg({ file, url, part, description, isProcessing: false });
+          } else if (slot === 'pose') {
+              const part = await fileToPart(file);
+              const description = await analyzeImageText(file, 'pose', imageSettings.modelType, imageSettings.customApiKey);
+              setClothingPose({ file, url, part, description, isProcessing: false });
+          } else {
+              const part = await fileToPart(file);
+              if (slot === 'person') setClothingPerson({ file, url, part });
+              else setClothingFace({ file, url, part });
+          }
+      } catch (error) {
+          console.error('Clothing file upload failed', error);
+          const part = await fileToPart(file);
+          if (slot === 'person') setClothingPerson({ file, url, part });
+          else if (slot === 'face') setClothingFace({ file, url, part });
+          else if (slot === 'cloth') setClothingCloth({ file, url, part, isProcessing: false });
+          else if (slot === 'bg') setClothingBg({ file, url, part, description: null, isProcessing: false });
+          else if (slot === 'pose') setClothingPose({ file, url, part, description: null, isProcessing: false });
+      }
   };
 
   const generateSwap = async () => {
+      if (!clothingPerson?.file) return;
       setIsClothingProcessing(true);
+      setClothingProgress(10);
       try {
-          const images: File[] = [clothingPerson!.file, clothingCloth!.file];
+          const images: File[] = [clothingPerson.file];
+          const isFaceMode = clothingMode === 'face' || clothingMode === 'both';
+          const isClothingMode = clothingMode === 'clothing' || clothingMode === 'both';
           
-          // Build prompt cho thay đồ
-          let prompt = 'Virtual try-on: Take the clothing/outfit from the SECOND reference image and dress it onto the person in the FIRST reference image. The person must wear EXACTLY the same clothing item shown in the second image - same color, pattern, style, and design. Keep the person\'s face, body shape, pose, skin tone, and hair completely unchanged. Only replace their current outfit with the clothing from reference image 2. Photorealistic result, natural lighting, seamless fit.';
-          if (clothingCustomPrompt?.trim()) {
-              prompt += ` Additional requirements: ${clothingCustomPrompt.trim()}`;
+          if (isClothingMode && clothingCloth?.file) images.push(clothingCloth.file);
+          if (isFaceMode && clothingFace?.file) images.push(clothingFace.file);
+
+          let prompt = 'AI fashion edit and face swap. Image 1 is the main person. ';
+          if (isClothingMode) {
+              prompt += 'Replace the outfit on Image 1 with the clothing from Image 2 exactly: same color, pattern, material, logo, cut, sleeve/collar shape, wrinkles, and fit. ';
+              prompt += 'Keep body shape, pose, skin tone, hair, hands, and lighting natural. ';
+              if (clothingCloth?.description) prompt += `Detected clothing details: ${clothingCloth.description}. `;
+          } else {
+              prompt += 'Keep the original clothing unchanged. ';
           }
-          if (clothingBg?.description) {
-              prompt += ` Nền: ${clothingBg.description}`;
+          if (isFaceMode) {
+              prompt += `Replace the face of the main person with the face from ${isClothingMode ? 'Image 3' : 'Image 2'}, blending identity, skin tone, angle, expression, jawline, and lighting naturally. `;
+          } else {
+              prompt += 'Preserve the original face and identity perfectly. ';
           }
-          if (clothingPose?.description) {
-              prompt += ` Tư thế: ${clothingPose.description}`;
-          }
+          if (clothingBg?.description) prompt += `Background reference: ${clothingBg.description}. `;
+          if (clothingPose?.description) prompt += `Pose reference: ${clothingPose.description}. `;
+          if (clothingCustomPrompt?.trim()) prompt += `Additional requirements: ${clothingCustomPrompt.trim()}. `;
+          if (clothingEnableUpscale) prompt += 'Enhance face detail, fabric texture, edge blending, and overall high-resolution realism. ';
+          prompt += 'Output must be photorealistic professional fashion photography with seamless compositing.';
 
           const settings: GenerationSettings = {
               ...imageSettings,
@@ -1200,13 +1277,18 @@ const App: React.FC = () => {
               aspectRatio: clothingAspectRatio || '1:1',
           };
 
+          setClothingProgress(45);
           const url = await generateWithTramSangTao(images, settings);
+          setClothingProgress(100);
           setClothingResultUrl(url);
           setClothingResultPart(await fileToPart(new File([await (await fetch(url)).blob()], 'res.png', { type: 'image/png' })));
       } catch (e: any) {
           console.error('Clothing swap failed:', e);
           alert(e?.message || 'Thay đồ thất bại. Vui lòng thử lại.');
-      } finally { setIsClothingProcessing(false); }
+      } finally {
+          setIsClothingProcessing(false);
+          setTimeout(() => setClothingProgress(0), 1000);
+      }
   };
 
   const renderHomeGrid = () => (
@@ -1950,6 +2032,13 @@ const App: React.FC = () => {
 
   const renderClothingUI = () => (
     <div className="flex flex-col gap-8 max-w-6xl mx-auto pb-20">
+        <div className="flex justify-center">
+            <div className="inline-flex bg-zinc-900/80 border border-white/10 rounded-2xl p-1">
+                <button onClick={() => setClothingMode('both')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${clothingMode === 'both' ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/40' : 'text-zinc-500 hover:text-zinc-300'}`}>Thay đồ + mặt</button>
+                <button onClick={() => setClothingMode('clothing')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${clothingMode === 'clothing' ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/40' : 'text-zinc-500 hover:text-zinc-300'}`}>Chỉ thay đồ</button>
+                <button onClick={() => setClothingMode('face')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${clothingMode === 'face' ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/40' : 'text-zinc-500 hover:text-zinc-300'}`}>Chỉ hoán đổi mặt</button>
+            </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-gray-400">Ảnh Người Mẫu</label>
@@ -1958,27 +2047,46 @@ const App: React.FC = () => {
                     <input type="file" className="hidden" onChange={e => e.target.files && handleClothingFileUpload('person', e.target.files[0])} accept="image/*" />
                 </label>
             </div>
+            {(clothingMode === 'both' || clothingMode === 'face') && (
+                <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-gray-400">Hoán đổi khuôn mặt</label>
+                    <label className={`relative block border-2 border-dashed rounded-xl h-64 overflow-hidden cursor-pointer hover:bg-zinc-800 transition-colors ${clothingFace ? 'border-emerald-500' : 'border-zinc-700'}`}>
+                        {clothingFace ? <img src={clothingFace.url} className="w-full h-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500"><FaceSmileIcon className="w-12 h-12 mb-2" /><span>Tải khuôn mặt</span></div>}
+                        <input type="file" className="hidden" onChange={e => e.target.files && handleClothingFileUpload('face', e.target.files[0])} accept="image/*" />
+                    </label>
+                </div>
+            )}
+            {(clothingMode === 'both' || clothingMode === 'clothing') && (
             <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-gray-400">Ảnh Trang Phục</label>
                 <label className={`relative block border-2 border-dashed rounded-xl h-64 overflow-hidden cursor-pointer hover:bg-zinc-800 transition-colors ${clothingCloth ? 'border-sky-500' : 'border-zinc-700'}`}>
                     {clothingCloth ? <img src={clothingCloth.url} className="w-full h-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500"><ShoppingBagIcon className="w-12 h-12 mb-2" /><span>Tải ảnh quần áo</span></div>}
+                    {clothingCloth?.isProcessing && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><ArrowPathIcon className="w-8 h-8 text-sky-400 animate-spin" /></div>}
                     <input type="file" className="hidden" onChange={e => e.target.files && handleClothingFileUpload('cloth', e.target.files[0])} accept="image/*" />
                 </label>
+                {clothingCloth?.description && <p className="text-[9px] text-zinc-500 leading-relaxed line-clamp-2">{clothingCloth.description}</p>}
             </div>
-            <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-gray-400">Bối Cảnh (Tùy chọn)</label>
-                <label className="relative block border-2 border-dashed border-zinc-700 rounded-xl h-64 overflow-hidden cursor-pointer hover:bg-zinc-800 transition-colors">
-                    {clothingBg ? <img src={clothingBg.url} className="w-full h-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500"><PhotoIcon className="w-12 h-12 mb-2" /><span>Tải ảnh nền</span></div>}
-                    <input type="file" className="hidden" onChange={e => e.target.files && handleClothingFileUpload('bg', e.target.files[0])} accept="image/*" />
-                </label>
-            </div>
-            <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-gray-400">Dáng Người (Tùy chọn)</label>
-                <label className="relative block border-2 border-dashed border-zinc-700 rounded-xl h-64 overflow-hidden cursor-pointer hover:bg-zinc-800 transition-colors">
-                    {clothingPose ? <img src={clothingPose.url} className="w-full h-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500"><FingerPrintIcon className="w-12 h-12 mb-2" /><span>Tải ảnh dáng</span></div>}
-                    <input type="file" className="hidden" onChange={e => e.target.files && handleClothingFileUpload('pose', e.target.files[0])} accept="image/*" />
-                </label>
-            </div>
+            )}
+            {clothingMode !== 'face' && (
+                <>
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-gray-400">Bối Cảnh (Tùy chọn)</label>
+                        <label className="relative block border-2 border-dashed border-zinc-700 rounded-xl h-64 overflow-hidden cursor-pointer hover:bg-zinc-800 transition-colors">
+                            {clothingBg ? <img src={clothingBg.url} className="w-full h-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500"><PhotoIcon className="w-12 h-12 mb-2" /><span>Tải ảnh nền</span></div>}
+                            {clothingBg?.isProcessing && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><ArrowPathIcon className="w-8 h-8 text-sky-400 animate-spin" /></div>}
+                            <input type="file" className="hidden" onChange={e => e.target.files && handleClothingFileUpload('bg', e.target.files[0])} accept="image/*" />
+                        </label>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-gray-400">Dáng Người (Tùy chọn)</label>
+                        <label className="relative block border-2 border-dashed border-zinc-700 rounded-xl h-64 overflow-hidden cursor-pointer hover:bg-zinc-800 transition-colors">
+                            {clothingPose ? <img src={clothingPose.url} className="w-full h-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500"><FingerPrintIcon className="w-12 h-12 mb-2" /><span>Tải ảnh dáng</span></div>}
+                            {clothingPose?.isProcessing && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><ArrowPathIcon className="w-8 h-8 text-sky-400 animate-spin" /></div>}
+                            <input type="file" className="hidden" onChange={e => e.target.files && handleClothingFileUpload('pose', e.target.files[0])} accept="image/*" />
+                        </label>
+                    </div>
+                </>
+            )}
         </div>
 
         <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-gray-800 space-y-6">
@@ -1994,9 +2102,14 @@ const App: React.FC = () => {
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${clothingEnableUpscale ? 'right-1' : 'left-1'}`} />
                         </button>
                     </div>
-                    <button onClick={generateSwap} disabled={!clothingPerson || !clothingCloth || isClothingProcessing} className="w-full mt-4 py-4 bg-gradient-to-r from-sky-600 to-blue-600 rounded-xl font-bold uppercase flex items-center justify-center gap-3 disabled:opacity-30">
+                    <button
+                        onClick={generateSwap}
+                        disabled={!clothingPerson || (clothingMode === 'both' && (!clothingCloth || !clothingFace)) || (clothingMode === 'clothing' && !clothingCloth) || (clothingMode === 'face' && !clothingFace) || isClothingProcessing || !!clothingCloth?.isProcessing || !!clothingBg?.isProcessing || !!clothingPose?.isProcessing}
+                        className="relative overflow-hidden w-full mt-4 py-4 bg-gradient-to-r from-sky-600 to-blue-600 rounded-xl font-bold uppercase flex items-center justify-center gap-3 disabled:opacity-30"
+                    >
+                        {isClothingProcessing && <div className="absolute inset-y-0 left-0 bg-white/10" style={{ width: `${clothingProgress}%`, transition: 'width 0.5s ease-out' }} />}
                         {isClothingProcessing ? <ArrowPathIcon className="w-6 h-6 animate-spin" /> : <SparklesIcon className="w-6 h-6" />}
-                        Bắt đầu thay đồ AI
+                        {isClothingProcessing ? (clothingProgress < 60 ? 'Đang tạo ảnh...' : 'Đang tinh chỉnh chất lượng...') : (clothingMode === 'both' ? 'Bắt đầu thay đồ + hoán đổi mặt AI' : clothingMode === 'clothing' ? 'Bắt đầu thay đồ AI' : 'Bắt đầu hoán đổi khuôn mặt AI')}
                     </button>
                 </div>
             </div>
@@ -2004,14 +2117,15 @@ const App: React.FC = () => {
 
         {clothingResultUrl && (
             <div className="flex flex-col items-center gap-6 mt-8 p-8 bg-zinc-900 rounded-3xl border border-sky-500/30">
-                <h3 className="text-2xl font-black text-sky-400 uppercase tracking-tighter">Kết quả thay đồ</h3>
+                <h3 className="text-2xl font-black text-sky-400 uppercase tracking-tighter">Kết quả AI</h3>
                 <div className="relative group max-w-lg w-full">
-                    <img src={clothingResultUrl} className="w-full rounded-2xl shadow-2xl border border-gray-700" />
+                    <img src={showOriginalInResult ? clothingPerson?.url : clothingResultUrl} className="w-full rounded-2xl shadow-2xl border border-gray-700" />
                     <button type="button" onClick={() => downloadImageOrAlert(clothingResultUrl, 'clothing_swap.png')} className="absolute bottom-4 right-4 p-4 bg-sky-600 hover:bg-sky-500 text-white rounded-full shadow-lg transition-transform hover:scale-110">
                         <ArrowDownTrayIcon className="w-6 h-6" />
                     </button>
                 </div>
                 <div className="flex gap-4">
+                    <button onClick={() => setShowOriginalInResult(v => !v)} className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-bold uppercase tracking-widest">{showOriginalInResult ? 'Xem kết quả AI' : 'So sánh ảnh gốc'}</button>
                     <button onClick={() => setShowClothingRefine(true)} className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-bold uppercase tracking-widest">Chỉnh sửa thêm</button>
                     <button onClick={() => setClothingResultUrl(null)} className="px-6 py-3 text-gray-500 hover:text-white uppercase text-xs font-bold">Xóa kết quả</button>
                 </div>
@@ -2028,7 +2142,7 @@ const App: React.FC = () => {
                         <button onClick={async () => {
                             setIsClothingProcessing(true); setShowClothingRefine(false);
                             try {
-                                const res = await refineClothingResult(clothingResultPart!, clothingRefinePrompt, clothingAspectRatio, clothingEnableUpscale);
+                                const res = await refineClothingResult(clothingResultPart!, clothingRefinePrompt, clothingAspectRatio, clothingEnableUpscale, imageSettings.modelType, imageSettings.customApiKey);
                                 setClothingResultUrl(res);
                                 setClothingResultPart(await fileToPart(new File([await (await fetch(res)).blob()], 'refine.png', { type: 'image/png' })));
                             } catch (e) {} finally { setIsClothingProcessing(false); }
@@ -2181,6 +2295,15 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-[#0a0a0a] bg-grid text-gray-200 font-sans overflow-hidden selection:bg-sky-500/30">
         <header className="flex-none flex items-center justify-between px-8 py-5 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-[150]">
              <div className="w-1/3 flex items-center gap-4">
+                 {viewMode === 'clothing' && (
+                   <button 
+                    onClick={() => setViewMode('home')} 
+                    className="px-6 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-900/20 transition-all active:scale-95 flex items-center gap-2"
+                   >
+                     <ArrowLeftIcon className="w-3.5 h-3.5" />
+                     Quay lại
+                   </button>
+                 )}
                  {viewMode === 'home' && (
                    <div className="flex bg-zinc-900/50 p-1 rounded-xl border border-white/5">
                      <button 

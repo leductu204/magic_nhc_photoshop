@@ -72,6 +72,38 @@ export interface GenerationSettings {
     effectIntensity?: number; // Cường độ hiệu ứng
     symmetryIntensity?: number; // Cường độ cân đối
     balanceMode?: 'facial' | 'body' | 'full'; // Chế độ cân đối
+    symHairSmoothEnable?: boolean;
+    symHairSmooth?: number;
+    symEyeDistanceEnable?: boolean;
+    symEyeDistance?: number;
+    symEyeSizeEnable?: boolean;
+    symEyeSize?: number;
+    symEyeLazyEnable?: boolean;
+    symEyeLazy?: number;
+    symNoseShrinkEnable?: boolean;
+    symNoseShrink?: number;
+    symNoseStraightenEnable?: boolean;
+    symNoseStraighten?: number;
+    symNoseLiftEnable?: boolean;
+    symNoseLift?: number;
+    symMouthAlignEnable?: boolean;
+    symMouthAlign?: number;
+    symMouthTeethEnable?: boolean;
+    symMouthTeeth?: number;
+    symMouthWrinklesEnable?: boolean;
+    symMouthWrinkles?: number;
+    symJawSlimEnable?: boolean;
+    symJawSlim?: number;
+    symChinVLineEnable?: boolean;
+    symChinVLine?: number;
+    symLegSlimEnable?: boolean;
+    symLegSlim?: number;
+    symLegLengthenEnable?: boolean;
+    symLegLengthen?: number;
+    symArmSlimEnable?: boolean;
+    symArmSlim?: number;
+    symArmLengthenEnable?: boolean;
+    symArmLengthen?: number;
     babyGender?: 'nam' | 'nu' | 'ngau-nhien'; // Giới tính em bé
     babyStyle?: 'realistic' | 'ultrasound'; // Phong cách ảnh em bé
     babyPredictMode?: 'parents' | 'ultrasound'; // Chế độ dự đoán em bé
