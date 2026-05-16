@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ProcessedImage } from '../types';
 import { ArrowPathIcon, TrashIcon, ArrowDownTrayIcon, CheckIcon, ScissorsIcon, PencilIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { downloadImage } from '../utils/downloadUtils';
 
 interface ImageCardProps {
   item: ProcessedImage;
@@ -154,15 +155,21 @@ const ImageCard: React.FC<ImageCardProps> = ({ item, onToggleSelect, onDelete, o
         {/* 4. Download Button */}
         <div className="w-full">
             {isCompleted ? (
-                <a 
-                    href={item.generatedImageUrl} 
-                    download={`nhc_ai_result_${item.id}.png`}
-                    onClick={(e) => e.stopPropagation()}
+                <button
+                    type="button"
+                    onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                            await downloadImage(item.generatedImageUrl!, `nhc_ai_result_${item.id}.png`);
+                        } catch (error: any) {
+                            alert(error?.message || 'Khong the tai anh.');
+                        }
+                    }}
                     className="w-full flex items-center justify-center gap-3 bg-sky-600 hover:bg-sky-500 text-white transition-all rounded-2xl py-3 shadow-xl text-[10px] font-black uppercase tracking-widest active:scale-95"
                 >
                     <ArrowDownTrayIcon className="w-5 h-5 stroke-[2px]" />
                     Tải về tác phẩm
-                </a>
+                </button>
             ) : (
                 <div className="w-full py-3 flex items-center justify-center gap-3 bg-white/5 rounded-2xl cursor-not-allowed opacity-20 border border-white/5">
                     <ArrowDownTrayIcon className="w-5 h-5" />

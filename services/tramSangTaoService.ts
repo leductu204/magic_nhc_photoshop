@@ -272,7 +272,7 @@ const pollAndReturn = async (jobId: string, apiKey: string): Promise<string> => 
     if (SUCCESS_STATUSES.has(status)) {
       const resultUrl = extractResultUrl(pollPayload);
       if (!resultUrl) throw new Error('Job hoàn tất nhưng thiếu URL ảnh kết quả.');
-      return resultUrl;
+      return toDataUrl(resultUrl);
     }
 
     if (FAILURE_STATUSES.has(status)) {

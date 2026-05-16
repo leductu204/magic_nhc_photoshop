@@ -5,6 +5,7 @@ import { generateStyledImage, generateProfileImage, generatePaintingImage, gener
 import { generateWithTramSangTao } from './services/tramSangTaoService';
 import { pcmToWavBlob, decodeAudioData, decode, stitchAudioBuffers } from './utils/audioUtils';
 import { splitTextIntoChunks } from './utils/textUtils';
+import { downloadImage, triggerDownload } from './utils/downloadUtils';
 import { AVAILABLE_VOICES, HISTORY_STORAGE_KEY, MAX_HISTORY_ITEMS } from './constants';
 import { ErrorDetails, HistoryItem, ViewMode, ProcessedImage, GenerationSettings, WeatherOption, StoredImage, ProfileSettings, ModelType, PrintLayoutType } from './types';
 import { initDB, saveImageToGallery, getGalleryImages, deleteGalleryImage } from './services/galleryService';
@@ -348,17 +349,36 @@ const App: React.FC = () => {
       ...DEFAULT_GENERATION_SETTINGS, 
       userPrompt: `Phục chế tấm ảnh cũ này với chất lượng cao: xóa vết trầy xước, bụi, vết bẩn, nếp gấp, phục hồi các vùng bị mờ, chỉnh sáng và độ tương phản, làm nét các chi tiết trên khuôn mặt, tăng cường màu sắc tự nhiên, giữ nguyên kết cấu gốc, giữ tông da chân thực, không làm da quá mịn giả.
 {
-  "caption": "Phục chế & nâng cấp ảnh cũ – giữ background gốc, màu điện ảnh, chuẩn Phase One XF IQ4 150MP",
-  "notes": "Biến ảnh cũ (kể cả ảnh chụp lại) thành ảnh màu hiện đại, sạch tuyệt đối, giữ background gốc nhưng nâng cấp đẳng cấp như chụp mới. Ưu tiên bảo toàn danh tính và pose.",
-  "camera_emulation": {
-    "brand_model": "Phase One XF IQ4 150MP",
-    "medium_format": true,
-    "look": "ultimate sharpness, maximum dynamic range, cinematic rendering"
+  "prime_directive": "IDENTITY_LOCK_MAXIMUM. Preserve 100% of the original subject's facial identity, structure, and features. This is the highest priority rule and is non-negotiable. All other tasks are secondary to this directive.",
+  "task": "ultra_high_fidelity_restoration_and_colorization",
+  "priority": "absolute_identity_preservation",
+  "description": "Phục chế và tô màu ảnh với chất lượng cao nhất, mô phỏng máy ảnh Phase One XF IQ4 150MP. Lệnh tối thượng là BẢO TOÀN TUYỆT ĐỐI nhận dạng và nét mặt gốc.",
+  "constraints": {
+    "facial_structure": {
+      "rule": "Giữ nguyên 100% các nét gốc, không thay đổi. This is a hard lock.",
+      "eyes": "Giữ nguyên hình dáng, kích thước và nếp mí mắt gốc. Không được thay đổi.",
+      "nose": "Giữ nguyên khuôn mũi, sống mũi và cánh mũi. Không được thay đổi.",
+      "mouth": "Giữ nguyên hình dạng miệng, môi trên và môi dưới. Không được thay đổi."
+    },
+    "skin_texture": {
+      "rule": "Tái tạo kết cấu da siêu thực, không làm mịn quá mức.",
+      "details": "Hiển thị rõ lỗ chân lông, nếp nhăn li ti, và các đặc điểm bề mặt da tự nhiên.",
+      "avoid": "Tránh hiệu ứng 'da nhựa', 'da búp bê', hoặc làm mịn mất chi tiết."
+    },
+    "lighting_and_color": {
+      "lighting": "Mô phỏng ánh sáng studio chuyên nghiệp (Key, Fill, Rim lighting).",
+      "colorization": "Tô màu tự nhiên, trung thực, độ bão hòa màu vừa phải, không bị rực quá mức.",
+      "dynamic_range": "Tối đa hóa dải động (Dynamic Range) để giữ chi tiết trong vùng tối và vùng sáng."
+    },
+    "camera_simulation": {
+      "model": "Phase One XF IQ4 150MP",
+      "lens": "85mm or 50mm prime lens for portrait",
+      "sensor": "Full-frame medium format sensor simulation",
+      "quality": "8K resolution, ultra-sharp focus, cinematic color grading"
+    }
   },
-  "subject_constraints": { "keep_identity": true, "expression_policy": "preserve_original" },
-  "retouching": { "skin": { "texture": "retain fine pores; avoid plastic look" }, "repair_cracks": "strict", "remove_dust_scratches": "strict" },
-  "colorization": { "style": "cinematic, natural, true-to-life" },
-  "clean_up": { "reconstruct_missing_parts": "museum-grade" }
+  "negative_prompt": "over-smoothed skin, plastic face, cartoon style, anime style, 3D render style, distorted features, changed identity, different eyes, different nose, different mouth, blurry, low resolution, artifacts, watermarks, signature, extra limbs, bad anatomy, unrealistic colors, oversaturated.",
+  "output_format": "Ultra-high-definition digital photograph, museum-grade restoration."
 }`,
       minimalCustomization: true,
       originalImageCompatibility: true,
@@ -1045,6 +1065,13 @@ const App: React.FC = () => {
       else setImages(updater);
   };
   const openLightbox = (img: ProcessedImage) => setLightboxData({ src: img.generatedImageUrl || img.originalPreviewUrl, originalSrc: img.originalPreviewUrl });
+  const downloadImageOrAlert = async (url: string, filename: string) => {
+      try {
+          await downloadImage(url, filename);
+      } catch (error: any) {
+          alert(error?.message || 'Khong the tai anh.');
+      }
+  };
   const handleDeleteAll = () => images.length > 0 && setIsDeleteModalOpen(true);
   const confirmDeleteAll = () => setImages([]);
   const handleDownloadAll = () => images.length > 0 && setIsDownloadAllModalOpen(true);
@@ -1052,7 +1079,7 @@ const App: React.FC = () => {
       for (const img of images) {
           const url = img.generatedImageUrl || img.originalPreviewUrl;
           if (url) {
-              const a = document.createElement('a'); a.href = url; a.download = `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${img.id}.png`; a.click();
+              await downloadImageOrAlert(url, `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${img.id}.png`);
               await new Promise(r => setTimeout(r, 300));
           }
       }
@@ -1111,10 +1138,7 @@ const App: React.FC = () => {
           ctx.drawImage(img, margin + 354 + spacing, margin + 709 + spacing, 354, 472); // 3x4
       }
 
-      const link = document.createElement('a');
-      link.download = `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${printLayout}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      triggerDownload(canvas.toDataURL('image/png'), `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${printLayout}.png`);
   };
 
   const handleGenerateVoice = useCallback(async () => {
@@ -1566,7 +1590,7 @@ const App: React.FC = () => {
                                                 <img src={img.generatedImageUrl} className="w-full h-full object-contain cursor-zoom-in" onClick={() => openLightbox(img)} />
                                                 <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                                     <button onClick={() => openCropper(img)} className="p-1.5 bg-black/60 rounded-md text-white hover:bg-sky-600"><ScissorsIcon className="w-3 h-3" /></button>
-                                                    <a href={img.generatedImageUrl} download={`profile_${img.id}.png`} className="p-1.5 bg-black/60 rounded-md text-white hover:bg-emerald-600"><ArrowDownTrayIcon className="w-3 h-3" /></a>
+                                                    <button type="button" onClick={() => downloadImageOrAlert(img.generatedImageUrl!, `profile_${img.id}.png`)} className="p-1.5 bg-black/60 rounded-md text-white hover:bg-emerald-600"><ArrowDownTrayIcon className="w-3 h-3" /></button>
                                                 </div>
                                             </>
                                         ) : (
@@ -1983,9 +2007,9 @@ const App: React.FC = () => {
                 <h3 className="text-2xl font-black text-sky-400 uppercase tracking-tighter">Kết quả thay đồ</h3>
                 <div className="relative group max-w-lg w-full">
                     <img src={clothingResultUrl} className="w-full rounded-2xl shadow-2xl border border-gray-700" />
-                    <a href={clothingResultUrl} download="clothing_swap.png" className="absolute bottom-4 right-4 p-4 bg-sky-600 hover:bg-sky-500 text-white rounded-full shadow-lg transition-transform hover:scale-110">
+                    <button type="button" onClick={() => downloadImageOrAlert(clothingResultUrl, 'clothing_swap.png')} className="absolute bottom-4 right-4 p-4 bg-sky-600 hover:bg-sky-500 text-white rounded-full shadow-lg transition-transform hover:scale-110">
                         <ArrowDownTrayIcon className="w-6 h-6" />
-                    </a>
+                    </button>
                 </div>
                 <div className="flex gap-4">
                     <button onClick={() => setShowClothingRefine(true)} className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-bold uppercase tracking-widest">Chỉnh sửa thêm</button>
@@ -2207,12 +2231,10 @@ const App: React.FC = () => {
                         if (images.length === 0) return;
                         images.forEach((img, i) => {
                           setTimeout(() => {
-                            const a = document.createElement('a');
-                            a.href = img.generatedImageUrl || img.originalPreviewUrl;
-                            a.download = `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${viewMode}-${i}.png`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
+                            downloadImageOrAlert(
+                              img.generatedImageUrl || img.originalPreviewUrl,
+                              `TOOL-MAGIC-NHC-PHOTOSHOP-VIPPRO -0828998995-${viewMode}-${i}.png`
+                            );
                           }, i * 200);
                         });
                       }} 

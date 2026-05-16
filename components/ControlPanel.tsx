@@ -4,6 +4,7 @@ import { GenerationSettings, WeatherOption, StoredImage, ViewMode, ProfileSettin
 import { MicrophoneIcon, XCircleIcon, ChevronDownIcon, ChevronUpIcon, PhotoIcon, ArrowPathIcon, SparklesIcon, TrashIcon, CheckIcon, BoltIcon, ChatBubbleBottomCenterTextIcon, ArchiveBoxIcon, ArrowDownTrayIcon, DocumentMagnifyingGlassIcon, EyeIcon, PlusIcon, PaintBrushIcon, ClockIcon, SpeakerWaveIcon, UserCircleIcon, AdjustmentsHorizontalIcon, ShoppingBagIcon, SwatchIcon, RocketLaunchIcon, KeyIcon, CreditCardIcon, MagnifyingGlassCircleIcon, ClipboardDocumentListIcon, IdentificationIcon, ListBulletIcon, AcademicCapIcon, FaceSmileIcon, BeakerIcon, ShieldCheckIcon, FireIcon, HeartIcon, WrenchScrewdriverIcon, VariableIcon, ScissorsIcon, SunIcon, LifebuoyIcon, FingerPrintIcon, UserIcon, MapPinIcon, PresentationChartBarIcon, ShoppingCartIcon, BuildingOffice2Icon, RectangleGroupIcon, TagIcon, ScaleIcon, HomeModernIcon, PencilIcon, BeakerIcon as LabIcon, ComputerDesktopIcon, CloudArrowDownIcon, ArrowTopRightOnSquareIcon, ExclamationTriangleIcon, SquaresPlusIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import { analyzeReferenceImage } from '../services/geminiService';
 import { ATTIRE_GROUPS, HAIRSTYLE_GROUPS } from '../constants';
+import { downloadImage } from '../utils/downloadUtils';
 
 interface ControlPanelProps {
   settings: GenerationSettings;
@@ -1848,14 +1849,20 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                                 </button>
                               </div>
                               <div className="flex flex-col gap-2">
-                                <a 
-                                  href={item.url} 
-                                  download={`gallery_nhc_${item.id}.png`} 
-                                  onClick={(e) => e.stopPropagation()} 
+                                <button
+                                  type="button"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      await downloadImage(item.url, `gallery_nhc_${item.id}.png`);
+                                    } catch (error: any) {
+                                      alert(error?.message || 'Khong the tai anh.');
+                                    }
+                                  }}
                                   className="w-full bg-sky-600/90 hover:bg-sky-600 text-white py-2 rounded-xl text-[9px] font-black uppercase text-center flex items-center justify-center gap-1.5 backdrop-blur-md transition-all"
                                 >
                                   <CloudArrowDownIcon className="w-4 h-4" /> Tải về
-                                </a>
+                                </button>
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); onSelectFromGallery(item); }} 
                                   className="w-full bg-white/90 hover:bg-white text-black py-2 rounded-xl text-[9px] font-black uppercase text-center flex items-center justify-center gap-1.5 backdrop-blur-md transition-all"

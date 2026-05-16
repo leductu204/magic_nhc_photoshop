@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Modality, Part } from "@google/genai";
-import { GenerationSettings, WeatherOption, ProfileSettings } from "../types";
+import { GenerationSettings, WeatherOption, ProfileSettings, ModelType } from "../types";
 
 // --- IMAGE HELPERS ---
 

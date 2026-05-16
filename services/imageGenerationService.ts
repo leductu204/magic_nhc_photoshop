@@ -41,13 +41,13 @@ export async function generateProfileImage(file: File, settings: ProfileSettings
   const images: File[] = [file];
   if (customAttireImage) images.push(customAttireImage);
 
-  const genSettings: GenerationSettings = {
+  const genSettings = {
     modelType: (settings as any).modelType || 'pro-image',
     userPrompt: prompt,
     customApiKey: (settings as any).customApiKey || '',
     imageSize: (settings as any).imageSize || '2K',
     aspectRatio: '1:1',
-  };
+  } as GenerationSettings;
 
   return generateWithTramSangTao(images, genSettings);
 }
